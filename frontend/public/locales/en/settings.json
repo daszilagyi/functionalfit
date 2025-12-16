@@ -1,0 +1,23 @@
+{
+  "title": "Settings",
+  "description": "Manage notification and calendar integration preferences",
+  "notifications": {
+    "title": "Email Notifications",
+    "description": "Automatic reminder emails for upcoming bookings",
+    "email24h": "24-hour reminder",
+    "email24hDescription": "Send email 1 day before class/session",
+    "email2h": "2-hour reminder",
+    "email2hDescription": "Send email 2 hours before class/session",
+    "updateSuccess": "Settings saved",
+    "updateSuccessDescription": "Your notification preferences have been updated successfully",
+    "updateError": "Error saving settings"
+  },
+  "gcal": {
+    "title": "Google Calendar Integration",
+    "description": "Sync your bookings to your personal Google Calendar",
+    "syncEnabled": "Google Calendar sync",
+    "syncEnabledDescription": "Automatically sync to your calendar",
+    "calendarId": "Google Calendar ID",
+    "calendarIdHelp": "Enter your Google Calendar email (usually your Gmail address)"
+  }
+}

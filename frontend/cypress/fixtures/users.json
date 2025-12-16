@@ -1,0 +1,51 @@
+{
+  "admin": {
+    "email": "admin@functionalfit.hu",
+    "password": "password",
+    "role": "admin",
+    "name": "Admin User"
+  },
+  "staff": [
+    {
+      "email": "janos.kovacs@functionalfit.hu",
+      "password": "password",
+      "role": "staff",
+      "name": "János Kovács",
+      "site": "SASAD"
+    },
+    {
+      "email": "eva.nagy@functionalfit.hu",
+      "password": "password",
+      "role": "staff",
+      "name": "Éva Nagy",
+      "site": "TB"
+    },
+    {
+      "email": "peter.toth@functionalfit.hu",
+      "password": "password",
+      "role": "staff",
+      "name": "Péter Tóth",
+      "site": "ÚJBUDA"
+    }
+  ],
+  "clients": [
+    {
+      "email": "anna.szabo@example.com",
+      "password": "password",
+      "role": "client",
+      "name": "Anna Szabó"
+    },
+    {
+      "email": "bela.kiss@example.com",
+      "password": "password",
+      "role": "client",
+      "name": "Béla Kiss"
+    },
+    {
+      "email": "csilla.varga@example.com",
+      "password": "password",
+      "role": "client",
+      "name": "Csilla Varga"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+# Frontend Development Dockerfile - Hot Reload with Vite
+# For development environment only
+
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install dependencies for node-gyp and build tools
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    git
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies with clean cache
+RUN npm ci --prefer-offline --no-audit
+
+# Copy application files
+COPY . .
+
+# Expose Vite dev server port
+EXPOSE 5173
+
+# Start development server with hot reload
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

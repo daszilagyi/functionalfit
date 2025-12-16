@@ -1,0 +1,64 @@
+{
+  "publicClasses": {
+    "title": "Group Classes",
+    "upcomingClasses": "Upcoming Classes",
+    "allSites": "All sites",
+    "today": "Today",
+    "noClasses": "No classes to display",
+    "noClassesThisDay": "No classes on this day",
+    "full": "Full",
+    "spots": "spots",
+    "spotsAvailable": "{{count}} spots left",
+    "spotsAvailable_one": "{{count}} spot left",
+    "spotsAvailable_other": "{{count}} spots left",
+    "capacity": "Capacity",
+    "waitlistCount": "On waitlist",
+    "book": "Book",
+    "joinWaitlist": "Join Waitlist",
+    "registerAndBook": "Register & Book",
+    "registerToBook": "Registration required to book. Click the button for quick registration.",
+    "views": {
+      "week": "Week",
+      "day": "Day",
+      "list": "List"
+    },
+    "quickRegister": {
+      "title": "Quick Registration",
+      "description": "Enter your details to register and book.",
+      "name": "Full Name",
+      "namePlaceholder": "John Doe",
+      "email": "Email Address",
+      "emailPlaceholder": "john.doe@email.com",
+      "password": "Password",
+      "passwordPlaceholder": "Min. 8 characters",
+      "phone": "Phone Number (optional)",
+      "phonePlaceholder": "+1 234 567 8900",
+      "submit": "Register",
+      "success": "Registration successful! You can now book classes.",
+      "emailTaken": "This email is already registered. Try logging in.",
+      "haveAccount": "Already have an account?",
+      "loginLink": "Log in"
+    },
+    "booking": {
+      "successConfirmed": "Booking confirmed! Your spot is secured.",
+      "successWaitlist": "You've been added to the waitlist (position {{position}}). We'll notify you when a spot opens.",
+      "alreadyBooked": "You have already booked this class.",
+      "deadlinePassed": "The booking deadline has passed.",
+      "noActivePass": "You don't have an active pass. Purchase a pass to book.",
+      "noClientProfile": "Admin and staff users cannot book directly. Use the admin panel to book for clients."
+    },
+    "footer": {
+      "info": "Questions? Feel free to contact us!",
+      "contact": "info@functionalfit.hu | +36 1 234 5678"
+    }
+  },
+  "errors": {
+    "loadFailed": "Failed to load classes. Please try again later.",
+    "bookFailed": "Booking failed. Please try again.",
+    "registerFailed": "Registration failed. Please try again.",
+    "nameRequired": "Name is required",
+    "invalidEmail": "Invalid email address",
+    "passwordMinLength": "Password must be at least 8 characters",
+    "passwordRequired": "Password is required"
+  }
+}

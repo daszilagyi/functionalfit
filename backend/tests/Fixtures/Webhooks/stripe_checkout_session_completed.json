@@ -1,0 +1,91 @@
+{
+  "id": "evt_2XYZ456abc",
+  "object": "event",
+  "api_version": "2023-10-16",
+  "created": 1700000100,
+  "type": "checkout.session.completed",
+  "data": {
+    "object": {
+      "id": "cs_test_abc123xyz",
+      "object": "checkout.session",
+      "after_expiration": null,
+      "allow_promotion_codes": null,
+      "amount_subtotal": 7900,
+      "amount_total": 7900,
+      "automatic_tax": {
+        "enabled": false,
+        "status": null
+      },
+      "billing_address_collection": null,
+      "cancel_url": "https://functionalfit.example.com/cancel",
+      "client_reference_id": null,
+      "consent": null,
+      "consent_collection": null,
+      "created": 1700000050,
+      "currency": "eur",
+      "customer": "cus_XYZ456",
+      "customer_creation": "always",
+      "customer_details": {
+        "address": {
+          "city": "Budapest",
+          "country": "HU",
+          "line1": "456 Training Ave",
+          "line2": null,
+          "postal_code": "5678",
+          "state": null
+        },
+        "email": "jane.smith@example.com",
+        "name": "Jane Smith",
+        "phone": "+36307654321",
+        "tax_exempt": "none",
+        "tax_ids": []
+      },
+      "customer_email": "jane.smith@example.com",
+      "expires_at": 1700086450,
+      "invoice": null,
+      "invoice_creation": null,
+      "livemode": false,
+      "locale": null,
+      "metadata": {
+        "credits": "20",
+        "pass_type": "20 Credit Pass",
+        "client_email": "jane.smith@example.com"
+      },
+      "mode": "payment",
+      "payment_intent": "pi_2XYZ456abc",
+      "payment_link": null,
+      "payment_method_collection": "always",
+      "payment_method_options": {},
+      "payment_method_types": [
+        "card"
+      ],
+      "payment_status": "paid",
+      "phone_number_collection": {
+        "enabled": false
+      },
+      "recovered_from": null,
+      "setup_intent": null,
+      "shipping_address_collection": null,
+      "shipping_cost": null,
+      "shipping_details": null,
+      "shipping_options": [],
+      "status": "complete",
+      "submit_type": null,
+      "subscription": null,
+      "success_url": "https://functionalfit.example.com/success",
+      "total_details": {
+        "amount_discount": 0,
+        "amount_shipping": 0,
+        "amount_tax": 0
+      },
+      "ui_mode": "hosted",
+      "url": null
+    }
+  },
+  "livemode": false,
+  "pending_webhooks": 1,
+  "request": {
+    "id": "req_XYZ456",
+    "idempotency_key": "xyz-456-abc"
+  }
+}

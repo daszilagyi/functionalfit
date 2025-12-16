@@ -1,0 +1,23 @@
+{
+  "title": "Beállítások",
+  "description": "Értesítési és naptár integrációs beállítások kezelése",
+  "notifications": {
+    "title": "Email értesítések",
+    "description": "Automatikus emlékeztető emailek az előközelgő foglalásokról",
+    "email24h": "24 órás emlékeztető",
+    "email24hDescription": "Email küldése 1 nappal az edzés/foglalás előtt",
+    "email2h": "2 órás emlékeztető",
+    "email2hDescription": "Email küldése 2 órával az edzés/foglalás előtt",
+    "updateSuccess": "Beállítások mentve",
+    "updateSuccessDescription": "Az értesítési beállításaid sikeresen frissítve lettek",
+    "updateError": "Hiba történt a beállítások mentése során"
+  },
+  "gcal": {
+    "title": "Google Naptár integráció",
+    "description": "Foglalások szinkronizálása a személyes Google Naptáraddal",
+    "syncEnabled": "Google Naptár szinkronizáció",
+    "syncEnabledDescription": "Automatikus szinkronizálás a saját naptáraddal",
+    "calendarId": "Google Naptár azonosító",
+    "calendarIdHelp": "Add meg a Google Naptár email címedet (általában a Gmail címed)"
+  }
+}

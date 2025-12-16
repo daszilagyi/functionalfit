@@ -141,6 +141,7 @@ use App\Http\Controllers\Api\Admin\AuditLogController;
 use App\Http\Controllers\Api\Admin\ParticipantController;
 use App\Http\Controllers\Api\Admin\EmailTemplateController;
 use App\Http\Controllers\Api\Admin\EventChangeController;
+use App\Http\Controllers\Api\Admin\CalendarChangeController;
 use App\Http\Controllers\Api\Admin\AdminEventController;
 use App\Http\Controllers\Api\Staff\StaffParticipantController;
 use App\Http\Controllers\Api\WebhookController;
@@ -171,6 +172,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/login', [AuthController::class, 'login']);
         Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
         Route::get('/me', [AuthController::class, 'me'])->middleware('auth:sanctum');
+        Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+        Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     });
 
     // Settings routes (public - no authentication required)
@@ -277,6 +280,9 @@ Route::prefix('v1')->group(function () {
             Route::get('/events/{id}/participant', [StaffParticipantController::class, 'getEventParticipant']);
             Route::post('/events/{id}/participant', [StaffParticipantController::class, 'assignEventParticipant']);
             Route::delete('/events/{id}/participant', [StaffParticipantController::class, 'removeEventParticipant']);
+
+            // Calendar changes (staff's own changes only)
+            Route::get('/calendar-changes', [CalendarChangeController::class, 'staffIndex']);
         });
 
         // ============================================
@@ -327,8 +333,12 @@ Route::prefix('v1')->group(function () {
             Route::get('/audit-logs', [AuditLogController::class, 'index']);
             Route::get('/events/{eventId}/audit-logs', [AuditLogController::class, 'showEventLogs']);
 
-            // Event changes log (calendar modifications)
+            // Event changes log (calendar modifications - legacy)
             Route::get('/event-changes', [EventChangeController::class, 'index']);
+
+            // Calendar changes log (comprehensive change tracking)
+            Route::get('/calendar-changes', [CalendarChangeController::class, 'index']);
+            Route::get('/calendar-changes/{id}', [CalendarChangeController::class, 'show']);
 
             // Admin events (all events with room filtering)
             Route::get('/events', [AdminEventController::class, 'index']);

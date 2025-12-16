@@ -1,0 +1,85 @@
+{
+  "title": "Client Portal",
+  "myActivity": "My Activity",
+  "myPasses": "My Passes",
+  "upcoming": "Upcoming Events",
+  "activity": {
+    "title": "Activity History",
+    "summary": "Summary",
+    "results": "results",
+    "totalSessions": "Total Sessions",
+    "attendedSessions": "Attended",
+    "noShows": "No-Shows",
+    "upcomingSessions": "Upcoming",
+    "totalCreditsUsed": "Credits Used",
+    "attendanceRate": "Attendance Rate",
+    "filters": {
+      "title": "Filters",
+      "all": "All",
+      "classes": "Classes Only",
+      "events": "1:1 Only",
+      "attended": "Attended",
+      "missed": "Missed",
+      "dateRange": "Date Range",
+      "dateFrom": "From Date",
+      "dateTo": "To Date",
+      "type": "Type",
+      "attendance": "Attendance"
+    },
+    "emptyState": "No activity history",
+    "item": {
+      "class": "Group Class",
+      "event": "1:1 Session",
+      "attended": "Attended",
+      "noShow": "No-Show",
+      "creditsUsed": "{{count}} credit"
+    }
+  },
+  "passes": {
+    "title": "My Passes",
+    "activePasses": "Active Passes",
+    "expiredPasses": "Expired Passes",
+    "totalCreditsRemaining": "Total Credits",
+    "noActivePasses": "No active passes",
+    "noExpiredPasses": "No expired passes",
+    "purchasePass": "Purchase New Pass",
+    "passDetails": {
+      "type": "Type",
+      "creditsTotal": "Total Credits",
+      "creditsRemaining": "Remaining Credits",
+      "remaining": "remaining",
+      "unlimited": "Unlimited",
+      "purchasedAt": "Purchase Date",
+      "expiresAt": "Expiry Date",
+      "status": {
+        "active": "Active",
+        "expired": "Expired",
+        "depleted": "Depleted"
+      },
+      "daysRemaining_zero": "Expires today",
+      "daysRemaining_one": "{{count}} day remaining",
+      "daysRemaining_other": "{{count}} days remaining",
+      "noExpiry": "No expiry"
+    }
+  },
+  "upcoming": {
+    "title": "Upcoming Events",
+    "noUpcoming": "No upcoming events",
+    "class": "Group Class",
+    "session": "1:1 Session",
+    "canCancel": "Can cancel",
+    "cannotCancel": "Cannot cancel",
+    "deadline": "Deadline: {{date}}",
+    "cancelSuccess": "Booking cancelled successfully",
+    "cannotCancelTooLate": "You can no longer cancel this booking (within 24 hours)",
+    "cancelFailed": "Failed to cancel booking",
+    "cancelConfirmTitle": "Cancel Booking",
+    "cancelConfirmMessage": "Are you sure you want to cancel this booking?",
+    "confirmCancel": "Confirm Cancellation"
+  },
+  "errors": {
+    "loadActivityFailed": "Failed to load activity",
+    "loadPassesFailed": "Failed to load passes",
+    "loadUpcomingFailed": "Failed to load upcoming events"
+  }
+}

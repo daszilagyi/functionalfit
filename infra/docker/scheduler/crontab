@@ -1,0 +1,7 @@
+# Laravel Scheduler Crontab for FunctionalFit
+# Runs Laravel scheduler every minute
+
+# Run Laravel scheduler
+* * * * * cd /var/www/html && php artisan schedule:run >> /var/www/html/storage/logs/scheduler.log 2>&1
+
+# Keep empty line at end

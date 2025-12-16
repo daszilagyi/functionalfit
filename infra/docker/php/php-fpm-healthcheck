@@ -1,0 +1,24 @@
+#!/bin/sh
+# PHP-FPM Health Check Script
+# Checks if PHP-FPM is responding and can process requests
+
+set -e
+
+# Check if PHP-FPM is running
+if ! pgrep -x php-fpm > /dev/null; then
+    echo "PHP-FPM process not found"
+    exit 1
+fi
+
+# Use fcgi to check PHP-FPM status
+export SCRIPT_NAME=/ping
+export SCRIPT_FILENAME=/ping
+export REQUEST_METHOD=GET
+
+if ! cgi-fcgi -bind -connect 127.0.0.1:9000 > /dev/null 2>&1; then
+    echo "PHP-FPM not responding"
+    exit 1
+fi
+
+echo "PHP-FPM is healthy"
+exit 0

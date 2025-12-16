@@ -1,0 +1,40 @@
+# Vendor directory (will be installed via composer)
+/vendor
+
+# Node modules
+/node_modules
+
+# Environment files
+.env
+.env.backup
+.env.example
+
+# Build artifacts
+/public/hot
+/public/storage
+/public/build
+
+# Storage and cache
+/storage/*.key
+/storage/logs/*.log
+/bootstrap/cache/*
+
+# IDE files
+.idea
+.vscode
+.DS_Store
+
+# Tests
+coverage/
+.phpunit.result.cache
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+
+# Logs
+*.log

@@ -1,0 +1,50 @@
+{
+  "common": {
+    "login": "Log In",
+    "logout": "Log Out",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Operation successful"
+  },
+  "auth": {
+    "email": "Email address",
+    "password": "Password",
+    "login_title": "Log in to your account",
+    "login_button": "Log In",
+    "remember_me": "Remember me",
+    "forgot_password": "Forgot password?",
+    "invalid_credentials": "Invalid email or password"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "calendar": "Calendar",
+    "classes": "Group Classes",
+    "profile": "Profile",
+    "settings": "Settings",
+    "clients": "Clients",
+    "staff": "Staff",
+    "reports": "Reports"
+  },
+  "roles": {
+    "client": "Client",
+    "staff": "Staff",
+    "admin": "Administrator"
+  },
+  "errors": {
+    "invalidClient": "Invalid client",
+    "invalidDateTime": "Invalid date or time",
+    "minDuration": "Minimum duration: 15 minutes",
+    "maxLength": "Text too long (max 500 characters)",
+    "bookingFailed": "Booking failed",
+    "generic": "An error occurred, please try again",
+    "timeSlotTaken": "This time slot is already taken",
+    "suggestAlternative": "Please choose another time"
+  },
+  "actions": {
+    "viewAlternatives": "View alternative times"
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "title": "Órarend",
+  "browseClasses": "Órák böngészése",
+  "myBookings": "Foglalásaim",
+  "upcomingClasses": "Közelgő órák",
+  "className": "Óra neve",
+  "trainer": "Edző",
+  "room": "Terem",
+  "capacity": "Kapacitás",
+  "creditsRequired": "Szükséges kreditek",
+  "duration": "Időtartam",
+  "description": "Leírás",
+  "bookNow": "Foglalás",
+  "cancelBooking": "Foglalás törlése",
+  "joinWaitlist": "Várólistára lépés",
+  "leaveWaitlist": "Kilépés a várólistáról",
+  "fullyBooked": "Megtelt",
+  "spotsLeft_zero": "Nincs szabad hely",
+  "spotsLeft_one": "{{count}} szabad hely",
+  "spotsLeft_other": "{{count}} szabad hely",
+  "waitlistBadge": "Várólista",
+  "confirmedBadge": "Megerősített",
+  "cancelledBadge": "Törölt",
+  "filters": {
+    "title": "Szűrők",
+    "dateRange": "Időszak",
+    "room": "Terem",
+    "classType": "Óra típusa",
+    "hasCapacity": "Csak szabad hellyel",
+    "showAll": "Minden megjelenítése"
+  },
+  "booking": {
+    "confirmTitle": "Foglalás megerősítése",
+    "confirmMessage": "Biztosan lefoglalod ezt az órát?",
+    "confirmWaitlist": "Az óra megtelt. Szeretnél feliratkozni a várólistára?",
+    "successConfirmed": "Sikeres foglalás! Megerősítő emailt küldtünk.",
+    "successWaitlist": "Feliratkoztál a várólistára. Értesítünk, ha felszabadult hely.",
+    "creditDeducted": "{{count}} kredit levonva.",
+    "notesPlaceholder": "Megjegyzések (opcionális)"
+  },
+  "cancellation": {
+    "confirmTitle": "Foglalás törlése",
+    "confirmMessage": "Biztosan törlöd a foglalást?",
+    "within24h": "24 órán belül törlöd az órát. A kredit nem kerül visszautalásra.",
+    "after24h": "24 órán belül nem törölhető az óra. Kérlek, lépj kapcsolatba velünk.",
+    "success": "Foglalás sikeresen törölve.",
+    "creditRefunded": "{{count}} kredit visszautalva.",
+    "reasonPlaceholder": "Törlés oka (opcionális)"
+  },
+  "details": {
+    "title": "Óra részletei",
+    "registrations": "Jelentkezések",
+    "waitlist": "Várólista",
+    "registeredCount": "{{count}} fő regisztrált",
+    "waitlistCount": "{{count}} fő a várólistán",
+    "noRegistrations": "Még nincs jelentkező",
+    "noWaitlist": "Nincs várólista"
+  },
+  "myBookings": {
+    "title": "Foglalásaim",
+    "upcoming": "Közelgő órák",
+    "past": "Előzmények",
+    "noUpcoming": "Nincs közelgő foglalásod",
+    "noPast": "Nincs korábbi foglalásod",
+    "attended": "Megjelent",
+    "noShow": "Nem jelent meg",
+    "cancelled": "Törölve",
+    "canCancelUntil": "Törölhető: {{date}}",
+    "cannotCancel": "Már nem törölhető"
+  },
+  "errors": {
+    "loadFailed": "Nem sikerült betölteni az órákat",
+    "bookFailed": "Foglalás sikertelen",
+    "cancelFailed": "Törlés sikertelen",
+    "conflict": "Ez az időpont már foglalt",
+    "insufficientCredits": "Nincs elegendő kreditje",
+    "classFull": "Az óra megtelt",
+    "alreadyBooked": "Már foglaltál erre az órára",
+    "tooLateToCancel": "Már késő törölni a foglalást"
+  }
+}

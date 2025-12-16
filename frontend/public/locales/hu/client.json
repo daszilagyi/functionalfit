@@ -1,0 +1,142 @@
+{
+  "title": "Ügyfélportál",
+  "myActivity": "Aktivitásom",
+  "myPasses": "Bérleteim",
+  "upcoming": "Közelgő események",
+  "activity": {
+    "title": "Aktivitási előzmények",
+    "summary": "Összesítés",
+    "results": "eredmény",
+    "totalSessions": "Összes alkalom",
+    "attendedSessions": "Megjelent",
+    "noShows": "Mulasztás",
+    "upcomingSessions": "Közelgő",
+    "totalCreditsUsed": "Felhasznált kreditek",
+    "attendanceRate": "Megjelenési arány",
+    "filters": {
+      "title": "Szűrők",
+      "all": "Minden",
+      "classes": "Csak órák",
+      "events": "Csak 1:1",
+      "attended": "Megjelent",
+      "missed": "Mulasztott",
+      "dateRange": "Időszak",
+      "dateFrom": "Időszak kezdete",
+      "dateTo": "Időszak vége",
+      "type": "Típus",
+      "attendance": "Megjelenés"
+    },
+    "emptyState": "Nincs aktivitási előzmény",
+    "item": {
+      "class": "Csoportos óra",
+      "event": "1:1 edzés",
+      "attended": "Megjelent",
+      "noShow": "Mulasztás",
+      "creditsUsed": "{{count}} kredit"
+    }
+  },
+  "passes": {
+    "title": "Bérleteim",
+    "activePasses": "Aktív bérletek",
+    "expiredPasses": "Lejárt bérletek",
+    "totalCreditsRemaining": "Összes kredit",
+    "noActivePasses": "Nincs aktív bérlet",
+    "noExpiredPasses": "Nincs lejárt bérlet",
+    "purchasePass": "Új bérlet vásárlása",
+    "passDetails": {
+      "type": "Típus",
+      "creditsTotal": "Összes kredit",
+      "creditsRemaining": "Fennmaradó kredit",
+      "remaining": "hátralevő",
+      "unlimited": "Korlátlan",
+      "purchasedAt": "Vásárlás dátuma",
+      "expiresAt": "Lejárat dátuma",
+      "status": {
+        "active": "Aktív",
+        "expired": "Lejárt",
+        "depleted": "Elfogyott"
+      },
+      "daysRemaining_zero": "Ma jár le",
+      "daysRemaining_one": "{{count}} nap van hátra",
+      "daysRemaining_other": "{{count}} nap van hátra",
+      "noExpiry": "Nincs lejárat"
+    }
+  },
+  "upcoming": {
+    "title": "Közelgő események",
+    "noUpcoming": "Nincs közelgő esemény",
+    "class": "Csoportos óra",
+    "session": "1:1 edzés",
+    "canCancel": "Lemondható",
+    "cannotCancel": "Már nem lemondható",
+    "deadline": "Határidő: {{date}}",
+    "cancelSuccess": "Foglalás sikeresen lemondva",
+    "cannotCancelTooLate": "Már nem mondhatod le ezt a foglalást (24 órán belül)",
+    "cancelFailed": "Foglalás lemondása sikertelen",
+    "cancelConfirmTitle": "Foglalás lemondása",
+    "cancelConfirmMessage": "Biztos hogy le szeretnéd mondani ezt a foglalást?",
+    "confirmCancel": "Lemondás megerősítése"
+  },
+  "errors": {
+    "loadActivityFailed": "Aktivitás betöltése sikertelen",
+    "loadPassesFailed": "Bérletek betöltése sikertelen",
+    "loadUpcomingFailed": "Közelgő események betöltése sikertelen"
+  },
+  "reports": {
+    "title": "Aktivitási Riportjaim",
+    "subtitle": "Saját edzéseim és előrehaladásom",
+    "myActivity": "Aktivitásom",
+    "period": {
+      "title": "Időszak Választása",
+      "last30Days": "Utolsó 30 nap",
+      "last3Months": "Utolsó 3 hónap",
+      "customPeriod": "Egyéni időszak",
+      "dateFrom": "Kezdő dátum",
+      "dateTo": "Záró dátum"
+    },
+    "summary": {
+      "title": "Összesítés",
+      "totalSessions": "Összes Alkalom",
+      "attendedSessions": "Megjelent Alkalmak",
+      "attendanceRate": "Megjelenési Arány",
+      "totalCreditsUsed": "Felhasznált Kreditek",
+      "totalHours": "Összes Óra",
+      "averagePerWeek": "Átlag Hetente"
+    },
+    "services": {
+      "title": "Igénybe Vett Szolgáltatások",
+      "serviceName": "Szolgáltatás",
+      "sessions": "Alkalmak",
+      "hours": "Órák",
+      "credits": "Kreditek",
+      "lastVisit": "Utolsó Látogatás",
+      "noServices": "Nincs igénybe vett szolgáltatás"
+    },
+    "payments": {
+      "title": "Befizetett Díjak",
+      "totalPaid": "Összes Befizetés",
+      "activePasses": "Aktív Bérletek",
+      "expiredPasses": "Lejárt Bérletek",
+      "totalCredits": "Összes Kredit",
+      "usedCredits": "Felhasznált Kredit",
+      "remainingCredits": "Fennmaradó Kredit"
+    },
+    "sessionHistory": {
+      "title": "Edzéstörténet",
+      "date": "Dátum",
+      "service": "Szolgáltatás",
+      "trainer": "Edző",
+      "room": "Terem",
+      "credits": "Kreditek",
+      "status": "Státusz",
+      "noHistory": "Nincs edzéstörténet az időszakban"
+    },
+    "trends": {
+      "title": "Trendek",
+      "weeklyActivity": "Heti Aktivitás",
+      "monthlyProgress": "Havi Előrehaladás",
+      "noTrendsData": "Nincs elérhető trend adat"
+    },
+    "noDataForPeriod": "Nincs adat a kiválasztott időszakra"
+  }
+}

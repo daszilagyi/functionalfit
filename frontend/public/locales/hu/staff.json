@@ -1,0 +1,77 @@
+{
+  "title": "Edzői Dashboard",
+  "subtitle": "Nézd meg a mai statisztikáidat és exportálj jelentéseket",
+  "stats": {
+    "todaySessions": "Mai Edzések",
+    "todayCompleted": "Ma Teljesített",
+    "todayRemaining": "Ma Hátralévő",
+    "weekTotalHours": "Heti Összes Óra"
+  },
+  "upcomingSession": {
+    "title": "Következő Edzés",
+    "blockTime": "Blokkolt Idő",
+    "minutes": "perc"
+  },
+  "export": {
+    "title": "Jelentések Exportálása",
+    "description": "Töltsd le a fizetési és részvételi jelentéseket egy adott időszakra",
+    "dateFrom": "Kezdő Dátum",
+    "dateTo": "Záró Dátum",
+    "payoutReport": "Fizetési Jelentés",
+    "payoutDescription": "Ledolgozott órák és fizetések munkavállalónként",
+    "attendanceReport": "Részvételi Jelentés",
+    "attendanceDescription": "Jelenléti statisztikák és foglalások",
+    "downloadXlsx": "XLSX Letöltése",
+    "downloadJson": "JSON Megtekintése",
+    "selectDateRange": "Kérlek válassz egy dátumtartományt",
+    "downloadSuccess": "Jelentés sikeresen letöltve",
+    "downloadFailed": "Jelentés letöltése sikertelen"
+  },
+  "reports": {
+    "title": "Riportjaim",
+    "subtitle": "Saját teljesítményem és statisztikáim",
+    "period": "Időszak",
+    "summary": "Összesítés",
+    "kpiCards": {
+      "totalHours": "Összes Ledolgozott Óra",
+      "totalSessions": "Összes Edzés",
+      "individualSessions": "1:1 Edzések",
+      "groupClasses": "Csoportos Órák",
+      "attendanceRate": "Részvételi Arány",
+      "totalEarnings": "Becsült Bevétel"
+    },
+    "trends": {
+      "title": "Trendek",
+      "weeklySessions": "Heti Edzések",
+      "weeklyHours": "Heti Órák",
+      "monthlyRevenue": "Havi Bevétel",
+      "noDataAvailable": "Nincs elérhető adat"
+    },
+    "clientList": {
+      "title": "Ügyféleim az Időszakban",
+      "clientName": "Ügyfél Neve",
+      "totalSessions": "Összes Alkalom",
+      "attended": "Megjelent",
+      "noShows": "Mulasztás",
+      "totalHours": "Összes Óra",
+      "noClients": "Nincs ügyfél az időszakban"
+    },
+    "sessionBreakdown": {
+      "title": "Edzések Részletezése",
+      "date": "Dátum",
+      "time": "Időpont",
+      "client": "Ügyfél",
+      "type": "Típus",
+      "duration": "Időtartam",
+      "status": "Státusz",
+      "noSessions": "Nincs edzés az időszakban"
+    },
+    "export": {
+      "title": "Exportálás",
+      "payoutReport": "Fizetési Riport",
+      "attendanceReport": "Részvételi Riport",
+      "downloadExcel": "Excel Letöltése",
+      "viewData": "Adatok Megtekintése"
+    }
+  }
+}

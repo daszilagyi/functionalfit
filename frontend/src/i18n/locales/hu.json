@@ -1,0 +1,174 @@
+{
+  "common": {
+    "login": "Bejelentkezés",
+    "logout": "Kijelentkezés",
+    "save": "Mentés",
+    "cancel": "Mégse",
+    "delete": "Törlés",
+    "edit": "Szerkesztés",
+    "view": "Megtekintés",
+    "loading": "Betöltés...",
+    "error": "Hiba történt",
+    "success": "Sikeres művelet",
+    "noData": "Nincs megjeleníthető adat",
+    "title": "Cím",
+    "previous": "Előző",
+    "next": "Következő"
+  },
+  "auth": {
+    "email": "E-mail cím",
+    "password": "Jelszó",
+    "login_title": "Bejelentkezés a fiókodba",
+    "login_button": "Bejelentkezés",
+    "remember_me": "Emlékezz rám",
+    "forgot_password": "Elfelejtett jelszó?",
+    "invalid_credentials": "Hibás e-mail cím vagy jelszó"
+  },
+  "navigation": {
+    "dashboard": "Irányítópult",
+    "calendar": "Naptár",
+    "classes": "Csoportos órák",
+    "profile": "Profil",
+    "settings": "Beállítások",
+    "clients": "Ügyfelek",
+    "staff": "Dolgozók",
+    "reports": "Jelentések"
+  },
+  "roles": {
+    "client": "Ügyfél",
+    "staff": "Dolgozó",
+    "admin": "Adminisztrátor"
+  },
+  "errors": {
+    "invalidClient": "Érvénytelen ügyfél",
+    "invalidDateTime": "Érvénytelen dátum vagy időpont",
+    "minDuration": "Minimum időtartam: 15 perc",
+    "maxLength": "Túl hosszú szöveg (max 500 karakter)",
+    "bookingFailed": "Foglalás sikertelen",
+    "generic": "Hiba történt, kérjük próbálja újra",
+    "timeSlotTaken": "Ez az időpont már foglalt",
+    "suggestAlternative": "Válasszon másik időpontot"
+  },
+  "actions": {
+    "viewAlternatives": "Alternatív időpontok megtekintése"
+  },
+  "calendar": {
+    "title": "Naptár",
+    "myCalendar": "Naptáram",
+    "today": "Mai nap",
+    "weekView": "Heti nézet",
+    "dayView": "Napi nézet",
+    "event": {
+      "createEvent": "Új esemény",
+      "clientName": "Ügyfél neve",
+      "searchClient": "Ügyfél keresése...",
+      "noClientsFound": "Nem található ügyfél",
+      "eventType": {
+        "INDIVIDUAL": "1:1 edzés",
+        "GROUP_CLASS": "Csoportos óra",
+        "BLOCK": "Zárt időszak"
+      }
+    },
+    "form": {
+      "type": "Esemény típusa",
+      "room": "Terem",
+      "startTime": "Kezdés időpontja",
+      "duration": "Időtartam (perc)",
+      "notes": "Megjegyzések",
+      "notesPlaceholder": "Megjegyzések az eseményhez..."
+    },
+    "actions": {
+      "create": "Létrehozás",
+      "cancel": "Mégse"
+    }
+  },
+  "classes": {
+    "title": "Csoportos órák"
+  },
+  "staff": {
+    "title": "Dolgozók",
+    "subtitle": "Edző statisztikák és teljesítmény",
+    "stats": {
+      "todaySessions": "Mai edzések",
+      "todayCompleted": "Ma teljesített",
+      "todayRemaining": "Ma hátralévő",
+      "weekTotalHours": "Heti összesített órák"
+    },
+    "export": {
+      "title": "Jelentések exportálása",
+      "description": "Töltsd le az edzési és kifizetési jelentéseket",
+      "dateFrom": "Kezdő dátum",
+      "dateTo": "Befejező dátum",
+      "payoutReport": "Kifizetési jelentés",
+      "payoutDescription": "Ledolgozott órák és fizetés dolgozónként",
+      "attendanceReport": "Jelenléti jelentés",
+      "attendanceDescription": "Edzések és megjelenések időbeli alakulása",
+      "downloadXlsx": "XLSX letöltése"
+    }
+  },
+  "activity": {
+    "myActivity": "Aktivitásom",
+    "stats": {
+      "totalSessions": "Összes edzés",
+      "completedSessions": "Befejezett edzések",
+      "cancelledSessions": "Törölt edzések",
+      "attendanceRate": "Megjelenési arány",
+      "upcomingSessions": "Közelgő edzések",
+      "thisWeek": "Ezen a héten",
+      "thisMonth": "Ebben a hónapban",
+      "allTime": "Összesen"
+    },
+    "export": {
+      "title": "Jelentések exportálása",
+      "description": "Töltsd le az edzési és kifizetési jelentéseket",
+      "dateFrom": "Kezdő dátum",
+      "dateTo": "Befejező dátum",
+      "payoutReport": "Kifizetési jelentés",
+      "payoutDescription": "Ledolgozott órák és fizetés",
+      "attendanceReport": "Jelenléti jelentés",
+      "attendanceDescription": "Edzések és megjelenések alakulása",
+      "downloadXlsx": "XLSX letöltése"
+    }
+  },
+  "dashboard": {
+    "title": "Irányítópult"
+  },
+  "users": {
+    "title": "Felhasználók",
+    "subtitle": "Felhasználók kezelése és engedélyek",
+    "createUser": "Új felhasználó",
+    "searchPlaceholder": "Keresés név vagy e-mail alapján...",
+    "allRoles": "Minden szerepkör",
+    "clients": "Ügyfelek",
+    "staff": "Dolgozók",
+    "admins": "Adminisztrátorok",
+    "usersList": "Felhasználók listája",
+    "noUsersFound": "Nincs találat",
+    "showing": "Megjelenítve",
+    "of": "összesen",
+    "role": {
+      "admin": "Adminisztrátor",
+      "staff": "Dolgozó",
+      "client": "Ügyfél"
+    },
+    "status": {
+      "active": "Aktív",
+      "inactive": "Inaktív"
+    }
+  },
+  "rooms": {
+    "title": "Termek",
+    "subtitle": "Létesítmény termek és helyszínek kezelése",
+    "createRoom": "Új terem",
+    "roomsList": "Termek listája"
+  },
+  "classTemplates": {
+    "title": "Órasablonok",
+    "subtitle": "Visszatérő csoportos órák sablonjai",
+    "createTemplate": "Új sablon",
+    "templatesList": "Sablonok listája"
+  },
+  "reports": {
+    "title": "Jelentések"
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "publicClasses": {
+    "title": "Csoportos Órák",
+    "upcomingClasses": "Elkövetkező órák",
+    "allSites": "Minden helyszín",
+    "today": "Ma",
+    "noClasses": "Nincs megjeleníthető óra",
+    "noClassesThisDay": "Nincs óra ezen a napon",
+    "full": "Betelt",
+    "spots": "hely",
+    "spotsAvailable": "{{count}} szabad hely",
+    "spotsAvailable_one": "{{count}} szabad hely",
+    "spotsAvailable_other": "{{count}} szabad hely",
+    "capacity": "Kapacitás",
+    "waitlistCount": "Várólistán",
+    "book": "Foglalás",
+    "joinWaitlist": "Várólistára",
+    "registerAndBook": "Regisztrálok és foglalok",
+    "registerToBook": "A foglaláshoz regisztráció szükséges. Kattints a gombra a gyors regisztrációhoz.",
+    "views": {
+      "week": "Hét",
+      "day": "Nap",
+      "list": "Lista"
+    },
+    "quickRegister": {
+      "title": "Gyors regisztráció",
+      "description": "Adj meg pár adatot a regisztrációhoz és foglaláshoz.",
+      "name": "Teljes név",
+      "namePlaceholder": "Kovács János",
+      "email": "E-mail cím",
+      "emailPlaceholder": "kovacs.janos@email.hu",
+      "password": "Jelszó",
+      "passwordPlaceholder": "Min. 8 karakter",
+      "phone": "Telefonszám (opcionális)",
+      "phonePlaceholder": "+36 30 123 4567",
+      "submit": "Regisztráció",
+      "success": "Sikeres regisztráció! Most már foglalhatsz.",
+      "emailTaken": "Ez az e-mail cím már foglalt. Próbálj bejelentkezni.",
+      "haveAccount": "Már van fiókod?",
+      "loginLink": "Jelentkezz be"
+    },
+    "booking": {
+      "successConfirmed": "Sikeres foglalás! A helyed biztosítva.",
+      "successWaitlist": "Felkerültél a várólistára ({{position}}. hely). Értesítünk, ha felszabadul hely.",
+      "alreadyBooked": "Már foglaltál erre az órára.",
+      "deadlinePassed": "A foglalási határidő lejárt.",
+      "noActivePass": "Nincs aktív bérleted. Vásárolj bérletet a foglaláshoz.",
+      "noClientProfile": "Admin és edző felhasználók nem foglalhatnak közvetlenül. Használd az admin felületet a foglaláshoz."
+    },
+    "footer": {
+      "info": "Kérdésed van? Keress minket bátran!",
+      "contact": "info@functionalfit.hu | +36 1 234 5678"
+    }
+  },
+  "errors": {
+    "loadFailed": "Nem sikerült betölteni az órákat. Próbáld újra később.",
+    "bookFailed": "A foglalás nem sikerült. Próbáld újra.",
+    "registerFailed": "A regisztráció nem sikerült. Próbáld újra.",
+    "nameRequired": "A név megadása kötelező",
+    "invalidEmail": "Érvénytelen e-mail cím",
+    "passwordMinLength": "A jelszónak legalább 8 karakter hosszúnak kell lennie",
+    "passwordRequired": "A jelszó megadása kötelező"
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "title": "Class Schedule",
+  "browseClasses": "Browse Classes",
+  "myBookings": "My Bookings",
+  "upcomingClasses": "Upcoming Classes",
+  "className": "Class Name",
+  "trainer": "Trainer",
+  "room": "Room",
+  "capacity": "Capacity",
+  "creditsRequired": "Credits Required",
+  "duration": "Duration",
+  "description": "Description",
+  "bookNow": "Book Now",
+  "cancelBooking": "Cancel Booking",
+  "joinWaitlist": "Join Waitlist",
+  "leaveWaitlist": "Leave Waitlist",
+  "fullyBooked": "Fully Booked",
+  "spotsLeft_zero": "No spots left",
+  "spotsLeft_one": "{{count}} spot left",
+  "spotsLeft_other": "{{count}} spots left",
+  "waitlistBadge": "Waitlist",
+  "confirmedBadge": "Confirmed",
+  "cancelledBadge": "Cancelled",
+  "filters": {
+    "title": "Filters",
+    "dateRange": "Date Range",
+    "room": "Room",
+    "classType": "Class Type",
+    "hasCapacity": "Available Only",
+    "showAll": "Show All"
+  },
+  "booking": {
+    "confirmTitle": "Confirm Booking",
+    "confirmMessage": "Are you sure you want to book this class?",
+    "confirmWaitlist": "This class is full. Would you like to join the waitlist?",
+    "successConfirmed": "Booking confirmed! Confirmation email sent.",
+    "successWaitlist": "Added to waitlist. We'll notify you if a spot opens up.",
+    "creditDeducted": "{{count}} credit deducted.",
+    "notesPlaceholder": "Notes (optional)"
+  },
+  "cancellation": {
+    "confirmTitle": "Cancel Booking",
+    "confirmMessage": "Are you sure you want to cancel this booking?",
+    "within24h": "Cancelling within 24 hours. Credit will not be refunded.",
+    "after24h": "Cannot cancel within 24 hours. Please contact us.",
+    "success": "Booking cancelled successfully.",
+    "creditRefunded": "{{count}} credit refunded.",
+    "reasonPlaceholder": "Cancellation reason (optional)"
+  },
+  "details": {
+    "title": "Class Details",
+    "registrations": "Registrations",
+    "waitlist": "Waitlist",
+    "registeredCount": "{{count}} registered",
+    "waitlistCount": "{{count}} on waitlist",
+    "noRegistrations": "No registrations yet",
+    "noWaitlist": "No waitlist"
+  },
+  "myBookings": {
+    "title": "My Bookings",
+    "upcoming": "Upcoming Classes",
+    "past": "Past Classes",
+    "noUpcoming": "No upcoming bookings",
+    "noPast": "No past bookings",
+    "attended": "Attended",
+    "noShow": "No Show",
+    "cancelled": "Cancelled",
+    "canCancelUntil": "Can cancel until {{date}}",
+    "cannotCancel": "Cannot cancel anymore"
+  },
+  "errors": {
+    "loadFailed": "Failed to load classes",
+    "bookFailed": "Booking failed",
+    "cancelFailed": "Cancellation failed",
+    "conflict": "This time slot is already booked",
+    "insufficientCredits": "Insufficient credits",
+    "classFull": "Class is full",
+    "alreadyBooked": "You already booked this class",
+    "tooLateToCancel": "Too late to cancel booking"
+  }
+}
