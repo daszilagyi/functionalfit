@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  # Nginx - Web Server
+  nginx:
+    image: nginx:alpine
+    container_name: functionalfit-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./frontend/dist:/var/www/html/frontend:ro
+      - ./backend/public:/var/www/html/backend/public:ro
+      - ./backend/storage/app/public:/var/www/html/backend/storage/app/public:ro
+      - ./infra/nginx/production.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./infra/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - php
+    networks:
+      - functionalfit
+
+  # PHP-FPM - Backend
+  php:
+    build:
+      context: ./backend
+      dockerfile: ../infra/docker/php.Dockerfile
+    container_name: functionalfit-php
+    restart: unless-stopped
+    volumes:
+      - ./backend:/var/www/html/backend
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - functionalfit
+
+  # Queue Worker
+  queue:
+    build:
+      context: ./backend
+      dockerfile: ../infra/docker/php.Dockerfile
+    container_name: functionalfit-queue
+    restart: unless-stopped
+    command: php artisan queue:work --sleep=3 --tries=3
+    volumes:
+      - ./backend:/var/www/html/backend
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - functionalfit
+
+  # Scheduler
+  scheduler:
+    build:
+      context: ./backend
+      dockerfile: ../infra/docker/php.Dockerfile
+    container_name: functionalfit-scheduler
+    restart: unless-stopped
+    command: sh -c "while true; do php artisan schedule:run; sleep 60; done"
+    volumes:
+      - ./backend:/var/www/html/backend
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - functionalfit
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: functionalfit-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_DATABASE:-functionalfit}
+      MYSQL_USER: ${DB_USERNAME:-functionalfit}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - functionalfit
+
+  # Redis Cache
+  redis:
+    image: redis:alpine
+    container_name: functionalfit-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - functionalfit
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  functionalfit:
+    driver: bridge
