@@ -192,7 +192,7 @@ return new class extends Migration
                 NULL AS service_type_id,
                 NULL AS service_type_name,
                 co.template_id AS class_template_id,
-                ct.name AS class_name,
+                ct.title AS class_name,
 
                 -- Location
                 co.room_id,

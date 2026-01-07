@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescript
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import type { ClassOccurrence } from '@/types/class'
@@ -40,6 +41,18 @@ const classOccurrenceSchema = z.object({
   starts_at: z.string().min(1, 'form.validation.dateRequired'),
   duration_minutes: z.number().min(15, 'form.validation.durationMin').max(480, 'form.validation.durationMax'),
   max_capacity: z.number().min(1, 'classOccurrenceForm.validation.capacityRequired'),
+  is_recurring: z.boolean().default(false),
+  repeat_from: z.string().optional(),
+  repeat_until: z.string().optional(),
+}).refine((data) => {
+  // If recurring, both dates are required
+  if (data.is_recurring && (!data.repeat_from || !data.repeat_until)) {
+    return false
+  }
+  return true
+}, {
+  message: 'classOccurrenceForm.validation.intervalRequired',
+  path: ['repeat_until'],
 })
 
 type ClassOccurrenceFormData = z.infer<typeof classOccurrenceSchema>
@@ -80,6 +93,9 @@ export function ClassOccurrenceFormModal({
       starts_at: '',
       duration_minutes: 60,
       max_capacity: 10,
+      is_recurring: false,
+      repeat_from: '',
+      repeat_until: '',
     },
   })
 
@@ -148,6 +164,9 @@ export function ClassOccurrenceFormModal({
     }
   }, [selectedTemplateId, templates, form, isEditing])
 
+  // Helper to format date without timezone offset (local time)
+  const formatLocalDateTime = (date: Date) => format(date, "yyyy-MM-dd'T'HH:mm:ss")
+
   // Create mutation
   const createMutation = useMutation({
     mutationFn: (data: ClassOccurrenceFormData) => {
@@ -158,9 +177,12 @@ export function ClassOccurrenceFormModal({
         class_template_id: data.class_template_id,
         room_id: data.room_id,
         trainer_id: data.trainer_id,
-        starts_at: startsAt.toISOString(),
-        ends_at: endsAt.toISOString(),
+        starts_at: formatLocalDateTime(startsAt),
+        ends_at: formatLocalDateTime(endsAt),
         max_capacity: data.max_capacity,
+        is_recurring: data.is_recurring,
+        repeat_from: data.is_recurring && data.repeat_from ? data.repeat_from : undefined,
+        repeat_until: data.is_recurring && data.repeat_until ? data.repeat_until : undefined,
       })
     },
     onSuccess: () => {
@@ -187,8 +209,8 @@ export function ClassOccurrenceFormModal({
       const endsAt = addMinutes(startsAt, data.duration_minutes)
 
       return adminClassOccurrencesApi.update(editingOccurrence!.id, {
-        starts_at: startsAt.toISOString(),
-        ends_at: endsAt.toISOString(),
+        starts_at: formatLocalDateTime(startsAt),
+        ends_at: formatLocalDateTime(endsAt),
         room_id: data.room_id,
         trainer_id: data.trainer_id,
         capacity: data.max_capacity,
@@ -428,6 +450,72 @@ export function ClassOccurrenceFormModal({
               </p>
             )}
           </div>
+
+          {/* Recurring Event (only for create mode) */}
+          {!isEditing && (
+            <>
+              <div className="flex items-center space-x-2 pt-4 pb-2 border-t">
+                <Controller
+                  name="is_recurring"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Checkbox
+                      id="is-recurring"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
+                />
+                <Label htmlFor="is-recurring" className="font-normal cursor-pointer">
+                  Ismétlődő esemény (minden héten)
+                </Label>
+              </div>
+
+              {/* Date interval - shown only when is_recurring is checked */}
+              {form.watch('is_recurring') && (
+                <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    Az óra minden héten ugyanezen a napon és időpontban létrejön a megadott intervallumon belül.
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Repeat From */}
+                    <div className="space-y-2">
+                      <Label htmlFor="repeat-from">
+                        Intervallum kezdete
+                        <span className="text-destructive ml-1">*</span>
+                      </Label>
+                      <Input
+                        id="repeat-from"
+                        type="date"
+                        {...form.register('repeat_from')}
+                      />
+                    </div>
+
+                    {/* Repeat Until */}
+                    <div className="space-y-2">
+                      <Label htmlFor="repeat-until">
+                        Intervallum vége
+                        <span className="text-destructive ml-1">*</span>
+                      </Label>
+                      <Input
+                        id="repeat-until"
+                        type="date"
+                        {...form.register('repeat_until')}
+                        min={form.watch('repeat_from')}
+                      />
+                    </div>
+                  </div>
+
+                  {form.formState.errors.repeat_until && (
+                    <p className="text-sm text-destructive">
+                      Mindkét dátum megadása kötelező
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose} disabled={isPending}>

@@ -194,6 +194,15 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
 
         // ============================================
+        // PROFILE ROUTES (All authenticated users)
+        // ============================================
+        Route::prefix('profile')->group(function () {
+            Route::get('/', [App\Http\Controllers\Api\ProfileController::class, 'show']);
+            Route::patch('/', [App\Http\Controllers\Api\ProfileController::class, 'update']);
+            Route::post('/change-password', [App\Http\Controllers\Api\ProfileController::class, 'changePassword']);
+        });
+
+        // ============================================
         // CLIENT ROUTES
         // ============================================
         Route::prefix('classes')->group(function () {
@@ -246,6 +255,7 @@ Route::prefix('v1')->group(function () {
         Route::prefix('staff')->middleware('role:staff,admin')->group(function () {
             // Staff events (1:1)
             Route::get('/my-events', [StaffEventController::class, 'index']);
+            Route::get('/all-events', [StaffEventController::class, 'allEvents']);
             Route::post('/events', [StaffEventController::class, 'store']);
             Route::patch('/events/{id}', [StaffEventController::class, 'update']);
             Route::delete('/events/{id}', [StaffEventController::class, 'destroy']);
@@ -258,9 +268,23 @@ Route::prefix('v1')->group(function () {
             Route::get('/rooms', [StaffRoomController::class, 'index']);
             Route::get('/rooms/{id}', [StaffRoomController::class, 'show']);
 
-            // Client search (for adding participants)
+            // Client management (staff can list, create, update clients)
+            Route::get('/clients', [StaffClientController::class, 'index']);
+            Route::post('/clients', [StaffClientController::class, 'store']);
             Route::get('/clients/search', [StaffClientController::class, 'search']);
             Route::get('/clients/batch', [StaffClientController::class, 'batch']);
+            Route::get('/clients/{id}', [StaffClientController::class, 'show']);
+            Route::patch('/clients/{id}', [StaffClientController::class, 'update']);
+
+            // Service types (read-only for staff)
+            Route::get('/service-types', [ServiceTypeController::class, 'index']);
+
+            // Client price codes (staff can manage price codes for clients)
+            Route::get('/clients/{client}/price-codes', [ClientPriceCodeController::class, 'index']);
+            Route::post('/clients/{client}/price-codes', [ClientPriceCodeController::class, 'store']);
+            Route::patch('/client-price-codes/{clientPriceCode}', [ClientPriceCodeController::class, 'update']);
+            Route::delete('/client-price-codes/{clientPriceCode}', [ClientPriceCodeController::class, 'destroy']);
+            Route::patch('/client-price-codes/{clientPriceCode}/toggle-active', [ClientPriceCodeController::class, 'toggleActive']);
 
             // Exports (legacy)
             Route::get('/exports/payout', [StaffExportController::class, 'payout']);
@@ -395,6 +419,10 @@ Route::prefix('v1')->group(function () {
             Route::patch('client-price-codes/{clientPriceCode}', [ClientPriceCodeController::class, 'update']);
             Route::delete('client-price-codes/{clientPriceCode}', [ClientPriceCodeController::class, 'destroy']);
             Route::patch('client-price-codes/{clientPriceCode}/toggle-active', [ClientPriceCodeController::class, 'toggleActive']);
+
+            // Client CSV Import
+            Route::post('clients/import', [App\Http\Controllers\Api\Admin\ClientImportController::class, 'import']);
+            Route::get('clients/import/service-types', [App\Http\Controllers\Api\Admin\ClientImportController::class, 'serviceTypes']);
 
             // Google Calendar Sync
             Route::prefix('google-calendar-sync')->group(function () {

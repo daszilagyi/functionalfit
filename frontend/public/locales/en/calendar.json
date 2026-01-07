@@ -167,7 +167,10 @@
     "locked": "Time period is locked",
     "notSameDay": "Can only modify on same day",
     "checkInFailed": "Check-in failed",
-    "adminOnly": "This action is only available to administrators"
+    "adminOnly": "This action is only available to administrators",
+    "notYourEvent": "This is not your event",
+    "cannotViewOthersEvents": "You can only view details of your own events.",
+    "cannotModifyOthersEvents": "You can only modify your own events."
   },
   "noEvents": "No events for this day",
   "loadingEvents": "Loading events...",
@@ -186,10 +189,14 @@
     "trainer": "Trainer",
     "selectTrainer": "Select trainer...",
     "maxCapacity": "Maximum Capacity",
+    "isRecurring": "Recurring event (weekly)",
+    "repeatUntil": "Repeat until",
+    "repeatUntilHelp": "The class will be created every week on the same day and time until this date.",
     "validation": {
       "templateRequired": "Template is required",
       "trainerRequired": "Trainer is required",
-      "capacityRequired": "Capacity is required"
+      "capacityRequired": "Capacity is required",
+      "repeatUntilRequired": "End date is required for recurring events"
     },
     "success": {
       "created": "Group class created successfully",

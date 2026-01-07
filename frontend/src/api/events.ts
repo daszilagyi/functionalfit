@@ -32,6 +32,16 @@ export const eventsApi = {
   },
 
   /**
+   * Get all events for staff (staff can view all events but only edit their own)
+   */
+  getAllEventsForStaff: async (filters?: EventListFilters): Promise<Event[]> => {
+    const response = await apiClient.get<ApiResponse<Event[]>>('/staff/all-events', {
+      params: filters,
+    })
+    return response.data.data
+  },
+
+  /**
    * Create a new event (staff/admin only)
    */
   create: async (data: CreateEventRequest): Promise<Event> => {
@@ -95,4 +105,5 @@ export const eventKeys = {
   list: (filters?: EventListFilters) => [...eventKeys.lists(), filters] as const,
   myEvents: (filters?: EventListFilters) => [...eventKeys.all, 'my', filters] as const,
   allEvents: (filters?: EventListFilters) => [...eventKeys.all, 'admin-all', filters] as const,
+  allEventsForStaff: (filters?: EventListFilters) => [...eventKeys.all, 'staff-all', filters] as const,
 }

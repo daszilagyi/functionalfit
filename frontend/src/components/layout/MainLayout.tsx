@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Calendar, LayoutDashboard, Users, LogOut, Menu, Activity, ClipboardList, Shield, ChevronDown, ChevronRight, DoorOpen, FileText, Dumbbell, Mail, Code, History, RefreshCw, Settings, MapPin, DollarSign, Receipt, Tag } from 'lucide-react'
+import { Calendar, LayoutDashboard, Users, UserPlus, LogOut, Menu, Activity, ClipboardList, Shield, ChevronDown, ChevronRight, DoorOpen, FileText, Dumbbell, Mail, Code, History, RefreshCw, Settings, MapPin, DollarSign, Receipt, Tag, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
 import { useState } from 'react'
@@ -20,12 +20,15 @@ export default function MainLayout() {
     { name: t('navigation.classes'), href: '/classes', icon: Users },
     { name: t('client:myActivity'), href: '/activity', icon: Activity },
     ...(user?.role === 'staff' || user?.role === 'admin' ? [{ name: t('staff:title'), href: '/staff', icon: ClipboardList }] : []),
+    // Clients management for staff and admin
+    ...(user?.role === 'staff' || user?.role === 'admin' ? [{ name: 'Vendégek', href: '/clients', icon: UserPlus }] : []),
     { name: t('navigation.settings'), href: '/settings', icon: Settings },
   ]
 
   const adminNavigation = user?.role === 'admin' ? [
     { name: t('admin:dashboard.title'), href: '/admin/dashboard', icon: LayoutDashboard },
     { name: t('admin:users.title'), href: '/admin/users', icon: Users },
+    { name: t('admin:clientImport.title', 'Vendég import'), href: '/admin/client-import', icon: Upload },
     { name: t('admin:sites.title'), href: '/admin/sites', icon: MapPin },
     { name: t('admin:rooms.title'), href: '/admin/rooms', icon: DoorOpen },
     { name: t('admin:classTemplates.title'), href: '/admin/class-templates', icon: Dumbbell },

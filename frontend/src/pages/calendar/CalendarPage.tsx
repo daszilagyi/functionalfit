@@ -48,6 +48,15 @@ export default function CalendarPage() {
   const { user } = useAuth()
 
   const isAdmin = user?.role === 'admin'
+  const isStaff = user?.role === 'staff'
+  const currentStaffId = user?.staffProfile?.id
+
+  // Check if current user owns an event (admin owns all, staff owns only their own)
+  const isEventOwner = (event: Event): boolean => {
+    if (isAdmin) return true
+    if (!currentStaffId) return false
+    return String(event.staff_id) === String(currentStaffId)
+  }
 
   const [dateRange, setDateRange] = useState({
     start: new Date(),
@@ -81,7 +90,7 @@ export default function CalendarPage() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
-  // Fetch events (admin gets all events, staff gets their own)
+  // Fetch events (admin gets all events, staff gets all events to view but can only edit their own)
   const { data: events, isLoading: isLoadingEvents } = useQuery({
     queryKey: isAdmin
       ? eventKeys.allEvents({
@@ -89,7 +98,7 @@ export default function CalendarPage() {
           date_to: dateRange.end.toISOString(),
           room_id: selectedRoomId || undefined,
         })
-      : eventKeys.myEvents({
+      : eventKeys.allEventsForStaff({
           date_from: dateRange.start.toISOString(),
           date_to: dateRange.end.toISOString(),
           room_id: selectedRoomId || undefined,
@@ -100,7 +109,7 @@ export default function CalendarPage() {
           date_to: dateRange.end.toISOString(),
           room_id: selectedRoomId || undefined,
         })
-      : eventsApi.getMyEvents({
+      : eventsApi.getAllEventsForStaff({
           date_from: dateRange.start.toISOString(),
           date_to: dateRange.end.toISOString(),
           room_id: selectedRoomId || undefined,
@@ -174,18 +183,21 @@ export default function CalendarPage() {
 
   // Map events to FullCalendar format
   // Personal training events (INDIVIDUAL, BLOCK) - check if event has pricing_id assigned
-  const individualEvents = events?.map(event => ({
-    id: `event-${event.id}`,
-    title: getEventTitle(event),
-    start: event.starts_at,
-    end: event.ends_at,
-    backgroundColor: getEventColor(event.type),
-    borderColor: getEventColor(event.type),
-    editable: true,
-    startEditable: true, // Allow drag & drop
-    durationEditable: true, // Allow resize
-    extendedProps: { event, isGroupClass: false },
-  })) ?? []
+  const individualEvents = events?.map(event => {
+    const canEdit = isEventOwner(event)
+    return {
+      id: `event-${event.id}`,
+      title: getEventTitle(event),
+      start: event.starts_at,
+      end: event.ends_at,
+      backgroundColor: canEdit ? getEventColor(event.type) : getEventColor(event.type) + '80', // 50% opacity for non-owned
+      borderColor: getEventColor(event.type),
+      editable: canEdit,
+      startEditable: canEdit, // Allow drag & drop only for owned events
+      durationEditable: canEdit, // Allow resize only for owned events
+      extendedProps: { event, isGroupClass: false, isOwner: canEdit },
+    }
+  }) ?? []
 
   // Map group classes to FullCalendar format
   const groupClassEvents = (showGroupClasses && groupClasses) ? groupClasses.map(classOccurrence => ({
@@ -253,12 +265,23 @@ export default function CalendarPage() {
   // Handle event click
   const handleEventClick = (clickInfo: EventClickArg) => {
     const isGroupClass = clickInfo.event.extendedProps.isGroupClass
+    const isOwner = clickInfo.event.extendedProps.isOwner
 
     if (isGroupClass) {
       const classOccurrence = clickInfo.event.extendedProps.classOccurrence as ClassOccurrence
       setSelectedClass(classOccurrence)
       setClassDetailsModalOpen(true)
     } else {
+      // Check if staff owns this event - if not, show toast and don't open details
+      if (!isOwner && isStaff) {
+        toast({
+          variant: 'default',
+          title: t('errors.notYourEvent', 'Ez nem a te eseményed'),
+          description: t('errors.cannotViewOthersEvents', 'Csak a saját eseményeid adatait tekintheted meg.'),
+        })
+        return
+      }
+
       const event = clickInfo.event.extendedProps.event as Event
       setSelectedEvent(event)
       setDetailsModalOpen(true)
@@ -268,6 +291,7 @@ export default function CalendarPage() {
   // Handle event drag & drop
   const handleEventDrop = (info: EventDropArg) => {
     const isGroupClass = info.event.extendedProps.isGroupClass
+    const isOwner = info.event.extendedProps.isOwner
     const oldStart = info.oldEvent.start
     const newStart = info.event.start
     const newEnd = info.event.end
@@ -300,6 +324,17 @@ export default function CalendarPage() {
       // Individual event drag and drop (same-day restriction)
       const event = info.event.extendedProps.event as Event
 
+      // Check ownership - staff can only move their own events
+      if (!isOwner && isStaff) {
+        info.revert()
+        toast({
+          variant: 'destructive',
+          title: t('errors.notYourEvent', 'Ez nem a te eseményed'),
+          description: t('errors.cannotModifyOthersEvents', 'Csak a saját eseményeidet módosíthatod.'),
+        })
+        return
+      }
+
       // Check same-day restriction
       if (!isSameDayMove(oldStart.toISOString(), newStart.toISOString())) {
         info.revert()
@@ -323,6 +358,7 @@ export default function CalendarPage() {
   // Handle event resize
   const handleEventResize = (info: EventResizeDoneArg) => {
     const isGroupClass = info.event.extendedProps.isGroupClass
+    const isOwner = info.event.extendedProps.isOwner
     const newStart = info.event.start
     const newEnd = info.event.end
 
@@ -354,6 +390,17 @@ export default function CalendarPage() {
       // Individual event resize (same-day restriction)
       const event = info.event.extendedProps.event as Event
       const oldStart = info.oldEvent.start
+
+      // Check ownership - staff can only resize their own events
+      if (!isOwner && isStaff) {
+        info.revert()
+        toast({
+          variant: 'destructive',
+          title: t('errors.notYourEvent', 'Ez nem a te eseményed'),
+          description: t('errors.cannotModifyOthersEvents', 'Csak a saját eseményeidet módosíthatod.'),
+        })
+        return
+      }
 
       if (!oldStart || !isSameDayMove(oldStart.toISOString(), newStart.toISOString())) {
         info.revert()
@@ -508,6 +555,9 @@ export default function CalendarPage() {
 
     const { event, classOccurrence, newStart, newEnd } = pendingUpdate
 
+    // Format dates without timezone offset (local time)
+    const formatLocalDateTime = (date: Date) => format(date, "yyyy-MM-dd'T'HH:mm:ss")
+
     if (classOccurrence) {
       // Update group class occurrence
       setPendingUpdate(null)
@@ -515,8 +565,8 @@ export default function CalendarPage() {
         {
           occurrenceId: String(classOccurrence.id),
           data: {
-            starts_at: newStart.toISOString(),
-            ends_at: newEnd.toISOString(),
+            starts_at: formatLocalDateTime(newStart),
+            ends_at: formatLocalDateTime(newEnd),
           },
         },
         {
@@ -536,7 +586,7 @@ export default function CalendarPage() {
         {
           eventId: event.id,
           data: {
-            starts_at: newStart.toISOString(),
+            starts_at: formatLocalDateTime(newStart),
             duration_minutes: durationMinutes,
           },
         },
@@ -569,15 +619,19 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="container py-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">{t('myCalendar')}</h1>
-        <div className="flex gap-2 items-center">
+    <div className="w-full px-2 py-4 sm:container sm:px-4 sm:py-6">
+      {/* Header - stacked on mobile, row on desktop */}
+      <div className="flex flex-col gap-4 mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold">{t('myCalendar')}</h1>
+
+        {/* Controls - wrapped on mobile */}
+        <div className="flex flex-wrap gap-2 items-center">
+          {/* Room selector */}
           <Select
             value={selectedRoomId || 'all'}
             onValueChange={(value) => setSelectedRoomId(value === 'all' ? null : value)}
           >
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder={t('selectRoom')} />
             </SelectTrigger>
             <SelectContent>
@@ -589,7 +643,9 @@ export default function CalendarPage() {
               ))}
             </SelectContent>
           </Select>
-          <div className="flex items-center gap-2 px-3 py-2 border rounded-md">
+
+          {/* Group classes checkbox */}
+          <div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-background">
             <Checkbox
               id="show-group-classes"
               checked={showGroupClasses}
@@ -597,25 +653,29 @@ export default function CalendarPage() {
             />
             <Label
               htmlFor="show-group-classes"
-              className="text-sm font-normal cursor-pointer"
+              className="text-sm font-normal cursor-pointer whitespace-nowrap"
             >
               {t('showGroupClasses')}
             </Label>
           </div>
-          <div className="h-6 w-px bg-border" />
-          <Button variant="outline" onClick={handleTodayTomorrowClick}>
-            {t('todayTomorrow')}
-          </Button>
-          <Button variant="outline" onClick={handleWeekViewClick}>
-            {t('weekView')}
-          </Button>
-          <Button variant="outline" onClick={handleDayViewClick}>
-            {t('dayView')}
-          </Button>
+
+          {/* View buttons */}
+          <div className="flex gap-1 sm:gap-2 ml-auto">
+            <Button variant="outline" size="sm" onClick={handleTodayTomorrowClick} className="text-xs sm:text-sm px-2 sm:px-3">
+              {t('todayTomorrow')}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleWeekViewClick} className="text-xs sm:text-sm px-2 sm:px-3">
+              {t('weekView')}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDayViewClick} className="text-xs sm:text-sm px-2 sm:px-3">
+              {t('dayView')}
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="bg-card rounded-lg border p-4">
+      {/* Calendar container - full width on mobile */}
+      <div className="bg-card rounded-lg border p-1 sm:p-4 -mx-2 sm:mx-0 overflow-x-auto">
         <FullCalendar
           ref={calendarRef}
           plugins={[timeGridPlugin, interactionPlugin]}

@@ -150,3 +150,82 @@
   height: 0;
   float: left;
 }
+
+/* FullCalendar Mobile Responsive Styles */
+@media (max-width: 640px) {
+  /* Reduce header toolbar size */
+  .fc .fc-toolbar {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .fc .fc-toolbar-chunk {
+    display: flex;
+    justify-content: center;
+  }
+
+  .fc .fc-toolbar-title {
+    font-size: 1rem !important;
+  }
+
+  .fc .fc-button {
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  /* Reduce time slot label width */
+  .fc .fc-timegrid-axis {
+    width: 40px !important;
+  }
+
+  .fc .fc-timegrid-slot-label {
+    font-size: 0.65rem !important;
+  }
+
+  /* Reduce day header size */
+  .fc .fc-col-header-cell {
+    font-size: 0.7rem !important;
+    padding: 0.25rem !important;
+  }
+
+  .fc .fc-col-header-cell-cushion {
+    padding: 0.25rem !important;
+  }
+
+  /* Smaller event text */
+  .fc-event {
+    font-size: 0.65rem !important;
+    padding: 1px 2px !important;
+  }
+
+  .fc-event-time {
+    font-size: 0.6rem !important;
+  }
+
+  .fc-event-title {
+    font-size: 0.65rem !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Force day view on very small screens */
+  .fc .fc-timegrid-cols {
+    min-width: 100% !important;
+  }
+
+  /* Reduce padding in time grid */
+  .fc .fc-timegrid-slot {
+    height: 2rem !important;
+  }
+
+  /* Hide scrollbar but allow scrolling */
+  .fc-scroller {
+    scrollbar-width: thin;
+  }
+
+  .fc-scroller::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+}

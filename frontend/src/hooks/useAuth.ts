@@ -14,7 +14,12 @@ export function useAuth(): UseAuthReturn {
     queryKey: ['auth', 'me'],
     queryFn: async () => {
       const response = await apiClient.get('/auth/me')
-      return response.data.data
+      const userData = response.data.data
+      // Normalize snake_case to camelCase for staffProfile
+      if (userData.staff_profile && !userData.staffProfile) {
+        userData.staffProfile = userData.staff_profile
+      }
+      return userData
     },
     retry: false,
     // Only fetch if we have an auth token

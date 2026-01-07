@@ -15,35 +15,52 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('clients', function (Blueprint $table) {
-            // Email reminder preferences
-            $table->boolean('email_reminder_24h')->default(true)->after('gdpr_consent_at')
-                ->comment('Receive 24h reminder emails for upcoming classes and 1:1 sessions');
-            $table->boolean('email_reminder_2h')->default(false)->after('email_reminder_24h')
-                ->comment('Receive 2h reminder emails for upcoming classes and 1:1 sessions');
-
-            // Google Calendar integration preference
-            $table->boolean('gcal_sync_enabled')->default(false)->after('email_reminder_2h')
-                ->comment('Sync bookings to personal Google Calendar');
-            $table->string('gcal_calendar_id')->nullable()->after('gcal_sync_enabled')
-                ->comment('Google Calendar ID for syncing client events');
-
-            // Index for reminder queries
-            $table->index(['email_reminder_24h', 'email_reminder_2h'], 'idx_client_reminder_prefs');
+            if (!Schema::hasColumn('clients', 'email_reminder_24h')) {
+                $table->boolean('email_reminder_24h')->default(true)->after('gdpr_consent_at')
+                    ->comment('Receive 24h reminder emails for upcoming classes and 1:1 sessions');
+            }
+            if (!Schema::hasColumn('clients', 'email_reminder_2h')) {
+                $table->boolean('email_reminder_2h')->default(false)->after('email_reminder_24h')
+                    ->comment('Receive 2h reminder emails for upcoming classes and 1:1 sessions');
+            }
+            if (!Schema::hasColumn('clients', 'gcal_sync_enabled')) {
+                $table->boolean('gcal_sync_enabled')->default(false)->after('email_reminder_2h')
+                    ->comment('Sync bookings to personal Google Calendar');
+            }
+            if (!Schema::hasColumn('clients', 'gcal_calendar_id')) {
+                $table->string('gcal_calendar_id')->nullable()->after('gcal_sync_enabled')
+                    ->comment('Google Calendar ID for syncing client events');
+            }
         });
+
+        // Add index separately to avoid issues with column checks
+        try {
+            Schema::table('clients', function (Blueprint $table) {
+                $table->index(['email_reminder_24h', 'email_reminder_2h'], 'idx_client_reminder_prefs');
+            });
+        } catch (\Exception $e) {
+            // Index already exists
+        }
 
         Schema::table('staff_profiles', function (Blueprint $table) {
-            // Email reminder preferences
-            $table->boolean('email_reminder_24h')->default(true)->after('is_active')
-                ->comment('Receive 24h reminder emails for upcoming sessions');
-            $table->boolean('email_reminder_2h')->default(false)->after('email_reminder_24h')
-                ->comment('Receive 2h reminder emails for upcoming sessions');
-
-            // Google Calendar integration is already handled by GoogleCalendarService
-            // Staff GCal sync is managed at the organization level, not per-staff preference
-
-            // Index for reminder queries
-            $table->index(['email_reminder_24h', 'email_reminder_2h'], 'idx_staff_reminder_prefs');
+            if (!Schema::hasColumn('staff_profiles', 'email_reminder_24h')) {
+                $table->boolean('email_reminder_24h')->default(true)
+                    ->comment('Receive 24h reminder emails for upcoming sessions');
+            }
+            if (!Schema::hasColumn('staff_profiles', 'email_reminder_2h')) {
+                $table->boolean('email_reminder_2h')->default(false)
+                    ->comment('Receive 2h reminder emails for upcoming sessions');
+            }
         });
+
+        // Add index separately
+        try {
+            Schema::table('staff_profiles', function (Blueprint $table) {
+                $table->index(['email_reminder_24h', 'email_reminder_2h'], 'idx_staff_reminder_prefs');
+            });
+        } catch (\Exception $e) {
+            // Index already exists
+        }
     }
 
     /**
@@ -52,21 +69,29 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('clients', function (Blueprint $table) {
-            $table->dropIndex('idx_client_reminder_prefs');
-            $table->dropColumn([
-                'email_reminder_24h',
-                'email_reminder_2h',
-                'gcal_sync_enabled',
-                'gcal_calendar_id',
-            ]);
+            try {
+                $table->dropIndex('idx_client_reminder_prefs');
+            } catch (\Exception $e) {}
+
+            $columns = ['email_reminder_24h', 'email_reminder_2h', 'gcal_sync_enabled', 'gcal_calendar_id'];
+            foreach ($columns as $column) {
+                if (Schema::hasColumn('clients', $column)) {
+                    $table->dropColumn($column);
+                }
+            }
         });
 
         Schema::table('staff_profiles', function (Blueprint $table) {
-            $table->dropIndex('idx_staff_reminder_prefs');
-            $table->dropColumn([
-                'email_reminder_24h',
-                'email_reminder_2h',
-            ]);
+            try {
+                $table->dropIndex('idx_staff_reminder_prefs');
+            } catch (\Exception $e) {}
+
+            $columns = ['email_reminder_24h', 'email_reminder_2h'];
+            foreach ($columns as $column) {
+                if (Schema::hasColumn('staff_profiles', $column)) {
+                    $table->dropColumn($column);
+                }
+            }
         });
     }
 };

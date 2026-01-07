@@ -53,10 +53,8 @@ return new class extends Migration
         }
 
         // Step 3: Add unique constraint with guest_index (if it doesn't exist)
-        // Check if index already exists before adding
-        $indexExists = collect(DB::select("PRAGMA index_list('event_additional_clients')"))
-            ->pluck('name')
-            ->contains('event_client_guest_unique');
+        // Check if index already exists before adding (MySQL/MariaDB compatible)
+        $indexExists = collect(DB::select("SHOW INDEX FROM event_additional_clients WHERE Key_name = 'event_client_guest_unique'"))->isNotEmpty();
 
         if (!$indexExists) {
             Schema::table('event_additional_clients', function (Blueprint $table) {

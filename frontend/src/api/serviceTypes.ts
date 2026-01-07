@@ -127,6 +127,62 @@ export const clientPriceCodesApi = {
   },
 }
 
+// Staff Service Types API (read-only)
+export const staffServiceTypesApi = {
+  /**
+   * List all service types (staff can only read)
+   */
+  list: async (): Promise<ServiceType[]> => {
+    const { data } = await apiClient.get<{ data: ServiceType[] }>('/staff/service-types')
+    return data.data
+  },
+}
+
+// Staff Client Price Codes API (uses /staff/ prefix instead of /admin/)
+export const staffClientPriceCodesApi = {
+  /**
+   * List all price codes for a client
+   */
+  listByClient: async (clientId: number): Promise<ClientPriceCode[]> => {
+    const { data } = await apiClient.get<{ data: ClientPriceCode[] }>(`/staff/clients/${clientId}/price-codes`)
+    return data.data
+  },
+
+  /**
+   * Create a new price code for a client
+   */
+  create: async (clientId: number, priceCodeData: ClientPriceCodeFormData): Promise<ClientPriceCode> => {
+    const { data } = await apiClient.post<{ data: ClientPriceCode }>(
+      `/staff/clients/${clientId}/price-codes`,
+      priceCodeData
+    )
+    return data.data
+  },
+
+  /**
+   * Update an existing price code
+   */
+  update: async (id: number, priceCodeData: Partial<ClientPriceCodeFormData>): Promise<ClientPriceCode> => {
+    const { data } = await apiClient.patch<{ data: ClientPriceCode }>(`/staff/client-price-codes/${id}`, priceCodeData)
+    return data.data
+  },
+
+  /**
+   * Toggle active status of a price code
+   */
+  toggleActive: async (id: number): Promise<ClientPriceCode> => {
+    const { data } = await apiClient.patch<{ data: ClientPriceCode }>(`/staff/client-price-codes/${id}/toggle-active`)
+    return data.data
+  },
+
+  /**
+   * Delete a price code
+   */
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(`/staff/client-price-codes/${id}`)
+  },
+}
+
 // Pricing Resolve API
 export const pricingResolveApi = {
   /**

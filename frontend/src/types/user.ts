@@ -15,6 +15,8 @@ export interface User {
   updatedAt: string
   // Profile relationships (populated based on role)
   client?: { id: number }
+  staff_profile?: { id: number }
+  // Alias for backwards compatibility
   staffProfile?: { id: number }
 }
 

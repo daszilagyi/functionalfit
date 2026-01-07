@@ -76,32 +76,127 @@ class ClassOccurrenceController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'class_template_id' => ['required', 'integer', 'exists:class_templates,id'],
+            'class_template_id' => ['required_without:template_id', 'integer', 'exists:class_templates,id'],
+            'template_id' => ['required_without:class_template_id', 'integer', 'exists:class_templates,id'],
             'room_id' => ['required', 'integer', 'exists:rooms,id'],
             'trainer_id' => ['required', 'integer', 'exists:staff_profiles,id'],
             'starts_at' => ['required', 'date'],
             'ends_at' => ['required', 'date', 'after:starts_at'],
-            'max_capacity' => ['required', 'integer', 'min:1'],
+            'max_capacity' => ['required_without:capacity', 'integer', 'min:1'],
+            'capacity' => ['required_without:max_capacity', 'integer', 'min:1'],
             'credits_required' => ['nullable', 'integer', 'min:1'],
+            'is_recurring' => ['sometimes', 'boolean'],
+            'repeat_from' => ['required_if:is_recurring,true', 'nullable', 'date'],
+            'repeat_until' => ['required_if:is_recurring,true', 'nullable', 'date', 'after_or_equal:repeat_from'],
         ]);
 
+        // Normalize field names (frontend uses class_template_id, max_capacity)
+        $templateId = $validated['template_id'] ?? $validated['class_template_id'];
+        $capacity = $validated['capacity'] ?? $validated['max_capacity'];
+        $isRecurring = $validated['is_recurring'] ?? false;
+        $repeatFrom = $validated['repeat_from'] ?? null;
+        $repeatUntil = $validated['repeat_until'] ?? null;
+
         try {
-            return DB::transaction(function () use ($validated) {
-                // Check for conflicts
-                $this->conflictService->checkConflicts(
-                    roomId: $validated['room_id'],
-                    startsAt: new \DateTime($validated['starts_at']),
-                    endsAt: new \DateTime($validated['ends_at']),
-                    staffId: $validated['trainer_id']
-                );
+            return DB::transaction(function () use ($validated, $templateId, $capacity, $isRecurring, $repeatFrom, $repeatUntil) {
+                $createdOccurrences = [];
 
-                $occurrence = ClassOccurrence::create([
-                    ...$validated,
-                    'status' => 'scheduled',
-                    'current_participants' => 0,
-                ]);
+                // Get time from starts_at (the time of day for the recurring events)
+                $startsAt = new \DateTime($validated['starts_at']);
+                $endsAt = new \DateTime($validated['ends_at']);
+                $startTime = $startsAt->format('H:i:s');
+                $endTime = $endsAt->format('H:i:s');
+                $dayOfWeek = (int) $startsAt->format('N'); // 1=Monday, 7=Sunday
 
-                return ApiResponse::created($occurrence->load(['template', 'room', 'trainer']), 'Class occurrence created');
+                if ($isRecurring && $repeatFrom && $repeatUntil) {
+                    // Create occurrences within the interval
+                    $repeatFromDate = new \DateTime($repeatFrom);
+                    $repeatUntilDate = new \DateTime($repeatUntil);
+
+                    // Find the first occurrence date (same day of week as starts_at, on or after repeat_from)
+                    $currentDate = clone $repeatFromDate;
+                    $currentDayOfWeek = (int) $currentDate->format('N');
+
+                    // Calculate days to add to get to the correct day of week
+                    $daysToAdd = ($dayOfWeek - $currentDayOfWeek + 7) % 7;
+                    if ($daysToAdd > 0) {
+                        $currentDate->modify("+{$daysToAdd} days");
+                    }
+
+                    // Create occurrences every week until repeat_until
+                    while ($currentDate <= $repeatUntilDate) {
+                        $occurrenceStartsAt = new \DateTime($currentDate->format('Y-m-d') . ' ' . $startTime);
+                        $occurrenceEndsAt = new \DateTime($currentDate->format('Y-m-d') . ' ' . $endTime);
+
+                        // Check for conflicts (skip if conflict, continue with others)
+                        try {
+                            $this->conflictService->checkConflicts(
+                                roomId: (int) $validated['room_id'],
+                                startsAt: $occurrenceStartsAt,
+                                endsAt: $occurrenceEndsAt,
+                                staffId: (int) $validated['trainer_id']
+                            );
+
+                            $occurrence = ClassOccurrence::create([
+                                'template_id' => $templateId,
+                                'room_id' => $validated['room_id'],
+                                'trainer_id' => $validated['trainer_id'],
+                                'starts_at' => $occurrenceStartsAt->format('Y-m-d H:i:s'),
+                                'ends_at' => $occurrenceEndsAt->format('Y-m-d H:i:s'),
+                                'capacity' => $capacity,
+                                'credits_required' => $validated['credits_required'] ?? null,
+                                'status' => 'scheduled',
+                            ]);
+
+                            $createdOccurrences[] = $occurrence;
+                        } catch (ConflictException $e) {
+                            // Skip this occurrence due to conflict, continue with others
+                            // Only throw if it's the first occurrence
+                            if (empty($createdOccurrences)) {
+                                throw $e;
+                            }
+                            // Otherwise, just skip and continue
+                        }
+
+                        // Move to next week
+                        $currentDate->modify('+1 week');
+                    }
+                } else {
+                    // Single occurrence - use the original starts_at and ends_at
+                    $this->conflictService->checkConflicts(
+                        roomId: (int) $validated['room_id'],
+                        startsAt: $startsAt,
+                        endsAt: $endsAt,
+                        staffId: (int) $validated['trainer_id']
+                    );
+
+                    $occurrence = ClassOccurrence::create([
+                        'template_id' => $templateId,
+                        'room_id' => $validated['room_id'],
+                        'trainer_id' => $validated['trainer_id'],
+                        'starts_at' => $startsAt->format('Y-m-d H:i:s'),
+                        'ends_at' => $endsAt->format('Y-m-d H:i:s'),
+                        'capacity' => $capacity,
+                        'credits_required' => $validated['credits_required'] ?? null,
+                        'status' => 'scheduled',
+                    ]);
+
+                    $createdOccurrences[] = $occurrence;
+                }
+
+                $message = count($createdOccurrences) > 1
+                    ? count($createdOccurrences) . ' csoportos óra létrehozva'
+                    : 'Csoportos óra létrehozva';
+
+                // Return the first occurrence for single create, or all for recurring
+                if (count($createdOccurrences) === 1) {
+                    return ApiResponse::created($createdOccurrences[0]->load(['template', 'room', 'trainer']), $message);
+                }
+
+                return ApiResponse::created([
+                    'count' => count($createdOccurrences),
+                    'occurrences' => collect($createdOccurrences)->map(fn($o) => $o->load(['template', 'room', 'trainer'])),
+                ], $message);
             });
         } catch (ConflictException $e) {
             return ApiResponse::conflict($e->getMessage(), $e->getDetails());
@@ -205,10 +300,10 @@ class ClassOccurrenceController extends Controller
             return DB::transaction(function () use ($validated, $occurrence, $request) {
                 // Check for conflicts (with new time/room/trainer)
                 $this->conflictService->checkConflicts(
-                    roomId: $validated['room_id'] ?? $occurrence->room_id,
+                    roomId: (int) ($validated['room_id'] ?? $occurrence->room_id),
                     startsAt: new \DateTime($validated['starts_at']),
                     endsAt: new \DateTime($validated['ends_at']),
-                    staffId: $validated['trainer_id'] ?? $occurrence->trainer_id,
+                    staffId: (int) ($validated['trainer_id'] ?? $occurrence->trainer_id),
                     excludeClassOccurrenceId: $occurrence->id
                 );
 

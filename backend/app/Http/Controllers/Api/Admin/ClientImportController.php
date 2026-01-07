@@ -1,0 +1,283 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Api\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Http\Responses\ApiResponse;
+use App\Models\Client;
+use App\Models\ClientPriceCode;
+use App\Models\ServiceType;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+
+class ClientImportController extends Controller
+{
+    private const DEFAULT_EMAIL = 'potoldazemailcimet@fontos.hu';
+    private const DEFAULT_PHONE = '0690555666';
+
+    /**
+     * Import clients from CSV file.
+     *
+     * Expected CSV format (semicolon-separated):
+     * nev;email;tel;szolg;edzoi dij;belepo dij
+     *
+     * POST /api/admin/clients/import
+     */
+    public function import(Request $request): JsonResponse
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,txt|max:5120', // Max 5MB
+        ]);
+
+        $file = $request->file('file');
+        $content = file_get_contents($file->getRealPath());
+
+        // Handle BOM if present
+        $content = preg_replace('/^\xEF\xBB\xBF/', '', $content);
+
+        // Split into lines and parse
+        $lines = preg_split('/\r\n|\r|\n/', $content);
+        $lines = array_filter($lines, fn ($line) => trim($line) !== '');
+
+        if (count($lines) < 2) {
+            return ApiResponse::error('A CSV fájl üres vagy csak fejlécet tartalmaz', null, 422);
+        }
+
+        // Parse header
+        $header = str_getcsv($lines[0], ';');
+        $header = array_map(fn ($col) => mb_strtolower(trim($col)), $header);
+
+        // Validate required columns
+        $requiredColumns = ['nev', 'email', 'tel', 'szolg', 'edzoi dij', 'belepo dij'];
+        $missingColumns = array_diff($requiredColumns, $header);
+
+        if (!empty($missingColumns)) {
+            return ApiResponse::error(
+                'Hiányzó oszlopok: ' . implode(', ', $missingColumns),
+                ['missing_columns' => $missingColumns],
+                422
+            );
+        }
+
+        // Build column index map
+        $columnIndex = [];
+        foreach ($header as $index => $column) {
+            $columnIndex[$column] = $index;
+        }
+
+        $results = [
+            'total' => 0,
+            'created' => 0,
+            'updated' => 0,
+            'errors' => [],
+            'imported' => [],
+        ];
+
+        // Process data rows
+        for ($i = 1; $i < count($lines); $i++) {
+            $line = trim($lines[$i]);
+            if ($line === '') {
+                continue;
+            }
+
+            $results['total']++;
+            $row = str_getcsv($line, ';');
+            $rowNumber = $i + 1;
+
+            try {
+                $result = $this->processRow($row, $columnIndex, $request->user()->id, $rowNumber);
+                if ($result['created']) {
+                    $results['created']++;
+                } else {
+                    $results['updated']++;
+                }
+                $results['imported'][] = $result;
+            } catch (\Exception $e) {
+                Log::error('CSV import error on row ' . $rowNumber, [
+                    'row' => $row,
+                    'error' => $e->getMessage(),
+                ]);
+                $results['errors'][] = [
+                    'row' => $rowNumber,
+                    'data' => $row,
+                    'error' => $e->getMessage(),
+                ];
+            }
+        }
+
+        return ApiResponse::success([
+            'summary' => [
+                'total' => $results['total'],
+                'created' => $results['created'],
+                'updated' => $results['updated'],
+                'errors' => count($results['errors']),
+            ],
+            'imported' => $results['imported'],
+            'errors' => $results['errors'],
+        ], 'Import befejezve');
+    }
+
+    /**
+     * Process a single CSV row.
+     */
+    private function processRow(array $row, array $columnIndex, int $createdBy, int $rowNumber): array
+    {
+        // Extract values with trimming
+        $name = trim($row[$columnIndex['nev']] ?? '');
+        $email = trim($row[$columnIndex['email']] ?? '');
+        $phone = trim($row[$columnIndex['tel']] ?? '');
+        $serviceCode = trim($row[$columnIndex['szolg']] ?? '');
+        $trainerFee = trim($row[$columnIndex['edzoi dij']] ?? '');
+        $entryFee = trim($row[$columnIndex['belepo dij']] ?? '');
+
+        // Apply defaults for missing email/phone
+        if ($email === '' || $email === '-' || $email === 'N/A') {
+            $email = self::DEFAULT_EMAIL;
+        }
+        if ($phone === '' || $phone === '-' || $phone === 'N/A') {
+            $phone = self::DEFAULT_PHONE;
+        }
+
+        // Validate required fields
+        if ($name === '') {
+            throw new \InvalidArgumentException('Hiányzó név a(z) ' . $rowNumber . '. sorban');
+        }
+
+        // Parse fees (handle comma as decimal separator and possible spaces)
+        $trainerFee = $this->parseFee($trainerFee);
+        $entryFee = $this->parseFee($entryFee);
+
+        return DB::transaction(function () use ($name, $email, $phone, $serviceCode, $trainerFee, $entryFee, $createdBy) {
+            // Find or create user
+            $user = User::where('email', $email)->first();
+            $isNewClient = false;
+
+            if (!$user) {
+                $user = User::create([
+                    'name' => $name,
+                    'email' => $email,
+                    'phone' => $phone,
+                    'role' => 'client',
+                    'status' => 'active',
+                    'password' => Hash::make(Str::random(16)), // Random password
+                ]);
+                $isNewClient = true;
+            } else {
+                // Update user data if existing
+                $user->update([
+                    'name' => $name,
+                    'phone' => $phone,
+                ]);
+            }
+
+            // Find or create client profile
+            $client = Client::where('user_id', $user->id)->first();
+            if (!$client) {
+                $client = Client::create([
+                    'user_id' => $user->id,
+                    'full_name' => $name,
+                    'date_of_joining' => now(),
+                ]);
+                $isNewClient = true;
+            } else {
+                $client->update([
+                    'full_name' => $name,
+                ]);
+            }
+
+            // Find service type by code or name (case-insensitive)
+            $serviceType = null;
+            $priceCodeCreated = false;
+
+            if ($serviceCode !== '') {
+                $serviceType = ServiceType::whereRaw('LOWER(code) = ?', [mb_strtolower($serviceCode)])
+                    ->orWhereRaw('LOWER(name) = ?', [mb_strtolower($serviceCode)])
+                    ->first();
+
+                if (!$serviceType) {
+                    throw new \InvalidArgumentException("Szolgáltatás típus nem található: {$serviceCode}");
+                }
+
+                // Create or update price code for this client and service type
+                $priceCode = ClientPriceCode::where('client_id', $client->id)
+                    ->where('service_type_id', $serviceType->id)
+                    ->where('is_active', true)
+                    ->first();
+
+                if ($priceCode) {
+                    // Update existing price code
+                    $priceCode->update([
+                        'entry_fee_brutto' => $entryFee,
+                        'trainer_fee_brutto' => $trainerFee,
+                    ]);
+                } else {
+                    // Create new price code
+                    ClientPriceCode::create([
+                        'client_id' => $client->id,
+                        'client_email' => $email,
+                        'service_type_id' => $serviceType->id,
+                        'entry_fee_brutto' => $entryFee,
+                        'trainer_fee_brutto' => $trainerFee,
+                        'currency' => 'HUF',
+                        'valid_from' => now(),
+                        'is_active' => true,
+                        'created_by' => $createdBy,
+                    ]);
+                    $priceCodeCreated = true;
+                }
+            }
+
+            return [
+                'created' => $isNewClient,
+                'client_id' => $client->id,
+                'name' => $name,
+                'email' => $email,
+                'phone' => $phone,
+                'service_type' => $serviceType?->name,
+                'entry_fee' => $entryFee,
+                'trainer_fee' => $trainerFee,
+                'price_code_created' => $priceCodeCreated,
+            ];
+        });
+    }
+
+    /**
+     * Parse fee value - handles various formats.
+     */
+    private function parseFee(string $value): int
+    {
+        if ($value === '' || $value === '-' || $value === 'N/A') {
+            return 0;
+        }
+
+        // Remove spaces, currency symbols
+        $value = preg_replace('/[^\d,.\-]/', '', $value);
+
+        // Replace comma with dot for decimal
+        $value = str_replace(',', '.', $value);
+
+        // Parse as float and convert to integer (assuming HUF, no decimals)
+        return (int) round((float) $value);
+    }
+
+    /**
+     * Get service types for dropdown in import preview.
+     *
+     * GET /api/admin/clients/import/service-types
+     */
+    public function serviceTypes(): JsonResponse
+    {
+        $serviceTypes = ServiceType::where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'code', 'name']);
+
+        return ApiResponse::success($serviceTypes);
+    }
+}

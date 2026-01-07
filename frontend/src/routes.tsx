@@ -9,6 +9,7 @@ import CalendarPage from './pages/calendar/CalendarPage'
 import ClassesPage from './pages/classes/ClassesPage'
 import ClientActivityPage from './pages/client/ClientActivityPage'
 import StaffDashboardPage from './pages/staff/StaffDashboardPage'
+import StaffClientsPage from './pages/staff/StaffClientsPage'
 import SettingsPage from './pages/SettingsPage'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
 import UsersPage from './pages/admin/UsersPage'
@@ -23,6 +24,7 @@ import PricingPage from './pages/admin/PricingPage'
 import ServiceTypesPage from './pages/admin/ServiceTypesPage'
 import SettlementsPage from './pages/admin/SettlementsPage'
 import EventChangesPage from './pages/admin/EventChangesPage'
+import ClientImportPage from './pages/admin/ClientImportPage'
 import NotFoundPage from './pages/NotFoundPage'
 import PublicClassesPage from './pages/public/PublicClassesPage'
 
@@ -75,6 +77,10 @@ export const routes: RouteObject[] = [
       {
         path: 'staff',
         element: <StaffDashboardPage />,
+      },
+      {
+        path: 'clients',
+        element: <StaffClientsPage />,
       },
       {
         path: 'settings',
@@ -138,6 +144,10 @@ export const routes: RouteObject[] = [
           {
             path: 'event-changes',
             element: <EventChangesPage />,
+          },
+          {
+            path: 'client-import',
+            element: <ClientImportPage />,
           },
         ],
       },

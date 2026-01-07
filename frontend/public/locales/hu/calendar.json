@@ -167,7 +167,10 @@
     "locked": "Az időszak zárolva van",
     "notSameDay": "Csak mai napon módosítható",
     "checkInFailed": "Bejelentkezés sikertelen",
-    "adminOnly": "Ez a művelet csak adminisztrátorok számára érhető el"
+    "adminOnly": "Ez a művelet csak adminisztrátorok számára érhető el",
+    "notYourEvent": "Ez nem a te eseményed",
+    "cannotViewOthersEvents": "Csak a saját eseményeid adatait tekintheted meg.",
+    "cannotModifyOthersEvents": "Csak a saját eseményeidet módosíthatod."
   },
   "noEvents": "Nincs esemény erre a napra",
   "loadingEvents": "Események betöltése...",
@@ -186,10 +189,14 @@
     "trainer": "Edző",
     "selectTrainer": "Válassz edzőt...",
     "maxCapacity": "Maximum létszám",
+    "isRecurring": "Ismétlődő esemény (minden héten)",
+    "repeatUntil": "Ismétlés vége",
+    "repeatUntilHelp": "Az óra minden héten ugyanezen a napon és időpontban létrejön a megadott dátumig.",
     "validation": {
       "templateRequired": "Kötelező kiválasztani egy sablont",
       "trainerRequired": "Kötelező kiválasztani egy edzőt",
-      "capacityRequired": "Kötelező megadni a kapacitást"
+      "capacityRequired": "Kötelező megadni a kapacitást",
+      "repeatUntilRequired": "Ismétlődő eseménynél kötelező megadni a befejezés dátumát"
     },
     "success": {
       "created": "Csoportos óra sikeresen létrehozva",

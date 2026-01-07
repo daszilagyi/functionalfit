@@ -13,7 +13,8 @@ class UpdateClientPriceCodeRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()?->isAdmin() ?? false;
+        $user = $this->user();
+        return $user && ($user->isAdmin() || $user->isStaff());
     }
 
     /**

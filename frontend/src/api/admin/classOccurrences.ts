@@ -11,6 +11,9 @@ export interface CreateClassOccurrenceRequest {
   ends_at: string
   max_capacity: number
   credits_required?: number
+  is_recurring?: boolean
+  repeat_from?: string
+  repeat_until?: string
 }
 
 export interface UpdateClassOccurrenceRequest {

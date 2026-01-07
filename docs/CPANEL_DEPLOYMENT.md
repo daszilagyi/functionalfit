@@ -49,9 +49,9 @@ npm run build
    - Válaszd ki: **ALL PRIVILEGES**
 
 **Jegyezd fel:**
-- Adatbázis neve: `username_functionalfit`
-- Felhasználó: `username_ffuser`
-- Jelszó: `amit_megadtál`
+- Adatbázis neve: `username_functionalfit` -stylelor_cms
+- Felhasználó: `username_ffuser`-stylelor_cms
+- Jelszó: `amit_megadtál`-QayWsxEdc_01
 
 ### 2. Fájlok feltöltése
 
@@ -217,6 +217,8 @@ Ugyanezt csináld a `backend/bootstrap/cache` mappával is.
 4. Töltsd fel a `database_schema.sql` fájlt (lásd lent)
 
 #### B) SSH-val (ha van hozzáférésed)
+6jsjP7y87O
+termius-NrBxFp#rb8fiNuk
 
 ```bash
 cd ~/public_html/backend

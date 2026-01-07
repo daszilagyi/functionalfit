@@ -24,7 +24,6 @@ export function PublicClassCard({ classOccurrence }: PublicClassCardProps) {
   const locale = i18n.language === 'hu' ? hu : enUS
   const startTime = format(new Date(classOccurrence.starts_at), 'HH:mm', { locale })
   const endTime = format(new Date(classOccurrence.ends_at), 'HH:mm', { locale })
-  const date = format(new Date(classOccurrence.starts_at), 'PPP', { locale })
 
   const isFull = classOccurrence.is_full || classOccurrence.available_spots <= 0
 

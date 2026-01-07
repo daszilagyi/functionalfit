@@ -42,7 +42,7 @@ return new class extends Migration
             $table->timestamps();
 
             // Indexes
-            $table->index(['staff_id', 'period_from', 'deleted_at'], 'idx_staff_payouts');
+            $table->index(['staff_id', 'period_from'], 'idx_staff_payouts');
             $table->index('exported_at');
             $table->index(['period_from', 'period_to']);
         });

@@ -39,7 +39,7 @@ export function ClassDetailsModal({ classOccurrence, open, onOpenChange }: Class
       queryClient.invalidateQueries({ queryKey: classKeys.lists() })
       queryClient.invalidateQueries({ queryKey: classKeys.detail(classOccurrence.id) })
 
-      const message = response.status === 'confirmed'
+      const message = (response as { status?: string }).status === 'confirmed'
         ? t('booking.successConfirmed')
         : t('booking.successWaitlist')
 

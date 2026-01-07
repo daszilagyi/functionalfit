@@ -64,6 +64,47 @@ class StaffEventController extends Controller
     }
 
     /**
+     * Get all events (staff can view all events on the calendar)
+     *
+     * GET /api/staff/all-events
+     */
+    public function allEvents(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        // Only staff and admin can access
+        if (!in_array($user->role, ['staff', 'admin'])) {
+            return ApiResponse::error('Only staff can access this endpoint', null, 403);
+        }
+
+        $dateFrom = $request->has('date_from')
+            ? \Carbon\Carbon::parse($request->input('date_from'))->startOfDay()
+            : now()->startOfWeek()->startOfDay();
+        $dateTo = $request->has('date_to')
+            ? \Carbon\Carbon::parse($request->input('date_to'))->endOfDay()
+            : now()->endOfWeek()->endOfDay();
+
+        $query = Event::with(['client.user', 'additionalClients.user', 'staff.user', 'room'])
+            ->whereBetween('starts_at', [$dateFrom, $dateTo])
+            ->orderBy('starts_at');
+
+        // Filter by room if provided
+        if ($request->has('room_id')) {
+            $roomId = $request->input('room_id');
+            if ($roomId !== 'all' && $roomId !== null) {
+                $query->where('room_id', $roomId);
+            }
+        }
+
+        // Filter by status if provided
+        if ($request->has('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        return ApiResponse::success($query->get());
+    }
+
+    /**
      * Create a new 1:1 event
      *
      * POST /api/staff/events

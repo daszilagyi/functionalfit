@@ -1,6 +1,33 @@
 {
   "title": "Settings",
   "description": "Manage notification and calendar integration preferences",
+  "profile": {
+    "title": "Personal Information",
+    "description": "Update your personal details",
+    "name": "Name",
+    "email": "Email address",
+    "phone": "Phone number",
+    "dateOfBirth": "Date of birth",
+    "emergencyContactName": "Emergency contact name",
+    "emergencyContactPhone": "Emergency contact phone",
+    "specialization": "Specialization",
+    "bio": "Bio",
+    "updateSuccess": "Profile updated",
+    "updateSuccessDescription": "Your personal information has been updated successfully",
+    "updateError": "Error updating profile"
+  },
+  "password": {
+    "title": "Change Password",
+    "description": "Update your password",
+    "current": "Current password",
+    "new": "New password",
+    "confirm": "Confirm new password",
+    "change": "Change Password",
+    "updateSuccess": "Password changed",
+    "updateSuccessDescription": "Your new password is now active.",
+    "updateError": "Error changing password. Please check your current password.",
+    "mismatch": "Passwords do not match"
+  },
   "notifications": {
     "title": "Email Notifications",
     "description": "Automatic reminder emails for upcoming bookings",

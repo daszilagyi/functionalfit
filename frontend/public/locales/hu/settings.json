@@ -1,6 +1,33 @@
 {
   "title": "Beállítások",
   "description": "Értesítési és naptár integrációs beállítások kezelése",
+  "profile": {
+    "title": "Személyes adatok",
+    "description": "Módosítsd a személyes adataidat",
+    "name": "Név",
+    "email": "Email cím",
+    "phone": "Telefonszám",
+    "dateOfBirth": "Születési dátum",
+    "emergencyContactName": "Vészhelyzeti kapcsolat neve",
+    "emergencyContactPhone": "Vészhelyzeti kapcsolat telefonszáma",
+    "specialization": "Szakterület",
+    "bio": "Bemutatkozás",
+    "updateSuccess": "Profil frissítve",
+    "updateSuccessDescription": "A személyes adataid sikeresen frissítve lettek",
+    "updateError": "Hiba a profil frissítésekor"
+  },
+  "password": {
+    "title": "Jelszó módosítása",
+    "description": "Változtasd meg a jelszavadat",
+    "current": "Jelenlegi jelszó",
+    "new": "Új jelszó",
+    "confirm": "Új jelszó megerősítése",
+    "change": "Jelszó módosítása",
+    "updateSuccess": "Jelszó megváltoztatva",
+    "updateSuccessDescription": "Az új jelszavad aktív.",
+    "updateError": "Hiba a jelszó módosításakor. Ellenőrizd a jelenlegi jelszót.",
+    "mismatch": "A jelszavak nem egyeznek"
+  },
   "notifications": {
     "title": "Email értesítések",
     "description": "Automatikus emlékeztető emailek az előközelgő foglalásokról",

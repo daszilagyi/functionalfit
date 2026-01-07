@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
 import { eventsApi, eventKeys } from '@/api/events'
 import { roomsApi, roomKeys } from '@/api/rooms'
-import { serviceTypesApi, serviceTypeKeys, pricingResolveApi } from '@/api/serviceTypes'
+import { serviceTypesApi, staffServiceTypesApi, serviceTypeKeys, pricingResolveApi } from '@/api/serviceTypes'
 import { createEventSchema, CreateEventFormData } from '@/lib/validations/event'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
@@ -85,10 +85,10 @@ export function EventFormModal({ open, onOpenChange, initialData, editingEvent, 
     staleTime: 10 * 60 * 1000,
   })
 
-  // Fetch service types for the dropdown
+  // Fetch service types for the dropdown (use staff API for non-admin)
   const { data: serviceTypes } = useQuery({
-    queryKey: serviceTypeKeys.lists(),
-    queryFn: serviceTypesApi.list,
+    queryKey: [...serviceTypeKeys.lists(), isAdmin ? 'admin' : 'staff'],
+    queryFn: isAdmin ? serviceTypesApi.list : staffServiceTypesApi.list,
     staleTime: 10 * 60 * 1000,
   })
 
@@ -317,6 +317,9 @@ export function EventFormModal({ open, onOpenChange, initialData, editingEvent, 
       return
     }
 
+    // Helper to format date without timezone offset (local time)
+    const formatLocalDateTime = (date: Date) => format(date, "yyyy-MM-dd'T'HH:mm:ss")
+
     if (isEditMode && editingEvent) {
       // Calculate ends_at from starts_at and duration_minutes
       const startsAt = new Date(data.starts_at)
@@ -325,8 +328,8 @@ export function EventFormModal({ open, onOpenChange, initialData, editingEvent, 
       const updates: any = {
         type: data.type,
         room_id: parseInt(data.room_id),
-        starts_at: startsAt.toISOString(),
-        ends_at: endsAt.toISOString(),
+        starts_at: formatLocalDateTime(startsAt),
+        ends_at: formatLocalDateTime(endsAt),
         notes: data.notes || null,
       }
 
@@ -367,8 +370,8 @@ export function EventFormModal({ open, onOpenChange, initialData, editingEvent, 
       const createData: any = {
         type: data.type,
         room_id: data.room_id,
-        starts_at: startsAt.toISOString(),
-        ends_at: endsAt.toISOString(),
+        starts_at: formatLocalDateTime(startsAt),
+        ends_at: formatLocalDateTime(endsAt),
         notes: data.notes || undefined,
       }
 
