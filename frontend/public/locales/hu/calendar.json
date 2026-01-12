@@ -22,6 +22,7 @@
     "eventDetails": "Esemény részletei",
     "deleteConfirmTitle": "Esemény törlésének megerősítése",
     "deleteConfirmMessage": "Biztosan törölni szeretnéd ezt az eseményt? Ez a művelet nem vonható vissza.",
+    "cannotDeletePastEvent": "Múltbeli események nem törölhetők",
     "clientName": "Ügyfél neve",
     "clientEmail": "Ügyfél email",
     "clientPhone": "Ügyfél telefon",

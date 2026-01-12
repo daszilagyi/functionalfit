@@ -343,6 +343,12 @@ class AdminEventController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $event = Event::findOrFail($id);
+
+        // Prevent deletion of past events
+        if ($event->starts_at < now()) {
+            return ApiResponse::error('Past events cannot be deleted', 403);
+        }
+
         $event->delete();
 
         return ApiResponse::success(null, 'Event deleted successfully');

@@ -22,6 +22,7 @@
     "eventDetails": "Event Details",
     "deleteConfirmTitle": "Confirm Event Deletion",
     "deleteConfirmMessage": "Are you sure you want to delete this event? This action cannot be undone.",
+    "cannotDeletePastEvent": "Past events cannot be deleted",
     "clientName": "Client Name",
     "clientEmail": "Client Email",
     "clientPhone": "Client Phone",

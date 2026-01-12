@@ -39,6 +39,9 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, o
   // Get additional clients list (support both snake_case and camelCase)
   const additionalClientsList = event.additional_clients || event.additionalClients || []
 
+  // Check if event start time is in the past (cannot delete past events)
+  const eventStartsInPast = isPast(new Date(event.starts_at))
+
   // Check if event is past and can be checked in (for any guest)
   const eventIsPastAndIndividual = event.status === 'scheduled' && isPast(new Date(event.ends_at)) && event.type === 'INDIVIDUAL'
 
@@ -790,14 +793,20 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, o
           </div>
 
           <DialogFooter className="flex items-center justify-between">
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={deleteMutation.isPending}
-              data-testid="event-delete-btn"
-            >
-              {t('actions.delete')}
-            </Button>
+            <div className="flex flex-col items-start gap-1">
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending || eventStartsInPast}
+                data-testid="event-delete-btn"
+                title={eventStartsInPast ? t('event.cannotDeletePastEvent') : undefined}
+              >
+                {t('actions.delete')}
+              </Button>
+              {eventStartsInPast && (
+                <span className="text-xs text-muted-foreground">{t('event.cannotDeletePastEvent')}</span>
+              )}
+            </div>
             <div className="flex gap-2">
               {(isAdmin || canEdit) && onEdit && (
                 <Button onClick={() => onEdit(event)}>

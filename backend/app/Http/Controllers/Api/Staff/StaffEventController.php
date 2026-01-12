@@ -357,6 +357,11 @@ class StaffEventController extends Controller
         // Authorization check via policy
         $this->authorize('delete', $event);
 
+        // Prevent deletion of past events
+        if ($event->starts_at < now()) {
+            return ApiResponse::error('Past events cannot be deleted', 403);
+        }
+
         return DB::transaction(function () use ($request, $event) {
             // Soft delete the event
             $event->delete();
