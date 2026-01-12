@@ -102,7 +102,7 @@ class SettlementController extends Controller
         );
 
         return ApiResponse::success([
-            'trainer_id' => $trainerId,
+            'trainer_id' => $userId,
             'period_start' => $periodStart->toDateString(),
             'period_end' => $periodEnd->toDateString(),
             'total_trainer_fee' => $preview['total_trainer_fee'],

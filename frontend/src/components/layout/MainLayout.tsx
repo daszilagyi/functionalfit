@@ -47,16 +47,32 @@ export default function MainLayout() {
     window.location.href = '/login'
   }
 
+  // Close sidebar when clicking a link on mobile
+  const handleNavClick = () => {
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Mobile overlay - click to close sidebar */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transition-transform duration-300',
+          'fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transition-transform duration-300 flex flex-col',
           !sidebarOpen && '-translate-x-full'
         )}
       >
-        <div className="flex h-16 items-center justify-between px-6 border-b">
+        <div className="flex h-16 items-center justify-between px-6 border-b shrink-0">
           <h1 className="text-xl font-bold text-primary">FunctionalFit</h1>
           <Button
             variant="ghost"
@@ -68,7 +84,7 @@ export default function MainLayout() {
           </Button>
         </div>
 
-        <nav className="flex-1 space-y-1 px-3 py-4">
+        <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
           {navigation.map((item) => {
             const isActive = location.pathname === item.href
             const Icon = item.icon
@@ -76,6 +92,7 @@ export default function MainLayout() {
               <Link
                 key={item.name}
                 to={item.href}
+                onClick={handleNavClick}
                 className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                   isActive
@@ -121,6 +138,7 @@ export default function MainLayout() {
                       <Link
                         key={item.name}
                         to={item.href}
+                        onClick={handleNavClick}
                         className={cn(
                           'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
                           isActive
@@ -139,7 +157,7 @@ export default function MainLayout() {
           )}
         </nav>
 
-        <div className="border-t p-4">
+        <div className="border-t p-4 shrink-0">
           <div className="flex items-center gap-3 mb-3">
             <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white font-semibold">
               {user?.name.charAt(0).toUpperCase()}
