@@ -80,10 +80,17 @@ export const eventsApi = {
   },
 
   /**
-   * Delete an event
+   * Delete an event (staff endpoint - cannot delete past events)
    */
   delete: async (eventId: string): Promise<void> => {
     await apiClient.delete(`/staff/events/${eventId}`)
+  },
+
+  /**
+   * Delete an event (admin endpoint - can delete any event including past)
+   */
+  adminDelete: async (eventId: string): Promise<void> => {
+    await apiClient.delete(`/admin/events/${eventId}`)
   },
 
   /**

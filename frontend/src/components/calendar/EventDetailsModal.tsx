@@ -61,7 +61,7 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, o
 
   // Delete mutation
   const deleteMutation = useMutation({
-    mutationFn: () => eventsApi.delete(event.id),
+    mutationFn: () => isAdmin ? eventsApi.adminDelete(event.id) : eventsApi.delete(event.id),
     onSuccess: async () => {
       // Refetch all event queries immediately
       await queryClient.refetchQueries({
