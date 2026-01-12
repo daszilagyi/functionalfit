@@ -1,36 +1,60 @@
 import { useTranslation } from 'react-i18next'
+import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/useAuth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Calendar, Users, Clock } from 'lucide-react'
+import { Calendar, Users, Clock, CalendarDays, UserCheck } from 'lucide-react'
+import { dashboardApi } from '@/api/dashboard'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function DashboardPage() {
   const { t } = useTranslation()
   const { user } = useAuth()
 
-  const stats = [
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ['dashboard', 'stats'],
+    queryFn: dashboardApi.getStats,
+  })
+
+  const statCards = [
     {
-      name: t('navigation.calendar'),
-      value: '12',
-      description: 'Upcoming bookings',
+      name: t('dashboard.todayEvents', 'Mai események'),
+      value: stats?.today_events ?? 0,
+      description: t('dashboard.todayEventsDesc', 'Edzések és órák ma'),
       icon: Calendar,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100',
     },
     {
-      name: t('navigation.classes'),
-      value: '8',
-      description: 'Active classes',
+      name: t('dashboard.weeklyHours', 'Heti órák'),
+      value: `${stats?.weekly_hours ?? 0}h`,
+      description: t('dashboard.weeklyHoursDesc', 'Ledolgozott órák ezen a héten'),
+      icon: Clock,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-100',
+    },
+    {
+      name: t('dashboard.activeClients', 'Aktív vendégek'),
+      value: stats?.active_clients ?? 0,
+      description: t('dashboard.activeClientsDesc', 'Regisztrált vendégek száma'),
       icon: Users,
       color: 'text-green-600',
       bgColor: 'bg-green-100',
     },
     {
-      name: 'This week',
-      value: '24h',
-      description: 'Total hours',
-      icon: Clock,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
+      name: t('dashboard.upcomingEvents', 'Közelgő események'),
+      value: stats?.upcoming_events ?? 0,
+      description: t('dashboard.upcomingEventsDesc', 'Események a következő 7 napban'),
+      icon: CalendarDays,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-100',
+    },
+    {
+      name: t('dashboard.todayBookings', 'Mai foglalások'),
+      value: stats?.today_bookings ?? 0,
+      description: t('dashboard.todayBookingsDesc', 'Csoportos órákra jelentkezettek'),
+      icon: UserCheck,
+      color: 'text-teal-600',
+      bgColor: 'bg-teal-100',
     },
   ]
 
@@ -41,12 +65,12 @@ export default function DashboardPage() {
           {t('navigation.dashboard')}
         </h1>
         <p className="text-gray-500 mt-2">
-          Welcome back, {user?.name}
+          {t('dashboard.welcome', 'Üdvözlünk')}, {user?.name}!
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        {stats.map((stat) => {
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {statCards.map((stat) => {
           const Icon = stat.icon
           return (
             <Card key={stat.name}>
@@ -59,7 +83,11 @@ export default function DashboardPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
+                {isLoading ? (
+                  <Skeleton className="h-8 w-16" />
+                ) : (
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                )}
                 <p className="text-xs text-gray-500 mt-1">
                   {stat.description}
                 </p>
@@ -71,14 +99,14 @@ export default function DashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
+          <CardTitle>{t('dashboard.recentActivity', 'Legutóbbi tevékenység')}</CardTitle>
           <CardDescription>
-            Your recent bookings and activities
+            {t('dashboard.recentActivityDesc', 'Legutóbbi foglalások és események')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-500">
-            No recent activity to display.
+            {t('dashboard.noRecentActivity', 'Nincs megjeleníthető tevékenység.')}
           </p>
         </CardContent>
       </Card>

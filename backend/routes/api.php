@@ -203,6 +203,13 @@ Route::prefix('v1')->group(function () {
         });
 
         // ============================================
+        // DASHBOARD ROUTES (All authenticated users)
+        // ============================================
+        Route::prefix('dashboard')->group(function () {
+            Route::get('/stats', [App\Http\Controllers\Api\DashboardController::class, 'stats']);
+        });
+
+        // ============================================
         // CLIENT ROUTES
         // ============================================
         Route::prefix('classes')->group(function () {
