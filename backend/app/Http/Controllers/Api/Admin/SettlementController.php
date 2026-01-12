@@ -86,8 +86,8 @@ class SettlementController extends Controller
         ]);
 
         $trainerId = $validated['trainer_id'];
-        $periodStart = \Carbon\Carbon::parse($validated['from']);
-        $periodEnd = \Carbon\Carbon::parse($validated['to']);
+        $periodStart = \Carbon\Carbon::parse($validated['from'])->startOfDay();
+        $periodEnd = \Carbon\Carbon::parse($validated['to'])->endOfDay();
 
         // Calculate settlement preview
         $preview = $this->pricingService->calculateSettlementForTrainer(
@@ -117,8 +117,8 @@ class SettlementController extends Controller
         $validated = $request->validated();
 
         $trainerId = $validated['trainer_id'];
-        $periodStart = \Carbon\Carbon::parse($validated['period_start']);
-        $periodEnd = \Carbon\Carbon::parse($validated['period_end']);
+        $periodStart = \Carbon\Carbon::parse($validated['period_start'])->startOfDay();
+        $periodEnd = \Carbon\Carbon::parse($validated['period_end'])->endOfDay();
 
         // Calculate settlement data
         $calculation = $this->pricingService->calculateSettlementForTrainer(
