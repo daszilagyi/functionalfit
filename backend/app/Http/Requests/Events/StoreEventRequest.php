@@ -23,7 +23,7 @@ class StoreEventRequest extends FormRequest
             'additional_client_ids.*' => ['integer'], // Allow negative IDs for technical guests
             'service_type_id' => ['nullable', 'integer', 'exists:service_types,id'],
             'room_id' => ['required', 'exists:rooms,id'],
-            'starts_at' => ['required', 'date', 'after:now'],
+            'starts_at' => ['required', 'date'],
             'ends_at' => ['required', 'date', 'after:starts_at'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
@@ -114,7 +114,6 @@ class StoreEventRequest extends FormRequest
             'client_id.required_if' => 'Client is required for individual events',
             'service_type_id.required' => 'Service type is required for individual events',
             'service_type_id.exists' => 'The selected service type does not exist',
-            'starts_at.after' => 'Event must be scheduled in the future',
             'ends_at.after' => 'End time must be after start time',
         ];
     }

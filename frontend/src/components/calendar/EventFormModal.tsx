@@ -180,13 +180,17 @@ export function EventFormModal({ open, onOpenChange, initialData, editingEvent, 
       if (editingEvent.service_type_id) {
         setSelectedServiceTypeId(editingEvent.service_type_id)
       }
-    } else if (initialData && open) {
-      if (initialData.starts_at) {
-        form.setValue('starts_at', initialData.starts_at)
-      }
-      if (initialData.duration_minutes) {
-        form.setValue('duration_minutes', initialData.duration_minutes)
-      }
+    } else if (open && !editingEvent) {
+      // Reset form to defaults when opening for new event
+      form.reset({
+        type: 'INDIVIDUAL',
+        staff_id: '',
+        client_id: '',
+        room_id: '',
+        starts_at: initialData?.starts_at || '',
+        duration_minutes: initialData?.duration_minutes || 60,
+        notes: '',
+      })
       setSelectedClientIds([])
       setSelectedServiceTypeId(null)
       setResolvedPricing(null)
@@ -241,11 +245,8 @@ export function EventFormModal({ open, onOpenChange, initialData, editingEvent, 
     mutationFn: (data: { id: string; updates: any }) =>
       isAdmin ? eventsApi.adminUpdate(data.id, data.updates) : eventsApi.update(data.id, data.updates),
     onSuccess: async () => {
-      // Refetch all event queries immediately
-      await queryClient.refetchQueries({
-        queryKey: eventKeys.all,
-        type: 'active'
-      })
+      // Invalidate and refetch all event queries
+      await queryClient.invalidateQueries({ queryKey: eventKeys.all })
       toast({ title: t('success.updated') })
       onOpenChange(false)
       form.reset()
