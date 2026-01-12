@@ -9,6 +9,7 @@ use App\Http\Requests\GenerateSettlementRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\Settlement;
 use App\Models\SettlementItem;
+use App\Models\StaffProfile;
 use App\Services\PricingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -85,13 +86,17 @@ class SettlementController extends Controller
             'to' => ['required', 'date', 'after_or_equal:from'],
         ]);
 
-        $trainerId = $validated['trainer_id'];
+        $userId = $validated['trainer_id'];
         $periodStart = \Carbon\Carbon::parse($validated['from'])->startOfDay();
         $periodEnd = \Carbon\Carbon::parse($validated['to'])->endOfDay();
 
+        // Convert user_id to staff_profile_id (Event.staff_id and ClassOccurrence.trainer_id reference staff_profiles.id)
+        $staffProfile = StaffProfile::where('user_id', $userId)->first();
+        $staffProfileId = $staffProfile?->id ?? $userId; // Fallback to userId if no profile found
+
         // Calculate settlement preview
         $preview = $this->pricingService->calculateSettlementForTrainer(
-            $trainerId,
+            $staffProfileId,
             $periodStart,
             $periodEnd
         );
@@ -116,13 +121,17 @@ class SettlementController extends Controller
     {
         $validated = $request->validated();
 
-        $trainerId = $validated['trainer_id'];
+        $userId = $validated['trainer_id'];
         $periodStart = \Carbon\Carbon::parse($validated['period_start'])->startOfDay();
         $periodEnd = \Carbon\Carbon::parse($validated['period_end'])->endOfDay();
 
+        // Convert user_id to staff_profile_id (Event.staff_id and ClassOccurrence.trainer_id reference staff_profiles.id)
+        $staffProfile = StaffProfile::where('user_id', $userId)->first();
+        $staffProfileId = $staffProfile?->id ?? $userId; // Fallback to userId if no profile found
+
         // Calculate settlement data
         $calculation = $this->pricingService->calculateSettlementForTrainer(
-            $trainerId,
+            $staffProfileId,
             $periodStart,
             $periodEnd
         );

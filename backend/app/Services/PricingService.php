@@ -9,6 +9,7 @@ use App\Models\Client;
 use App\Models\ClassOccurrence;
 use App\Models\ClientClassPricing;
 use App\Models\ClassPricingDefault;
+use App\Models\Event;
 use Carbon\Carbon;
 
 class PricingService
@@ -104,19 +105,55 @@ class PricingService
      */
     public function calculateSettlementForTrainer(int $trainerId, Carbon $periodStart, Carbon $periodEnd): array
     {
-        // Get all class occurrences in the period for this trainer
-        $occurrences = ClassOccurrence::where('trainer_id', $trainerId)
-            ->whereBetween('starts_at', [$periodStart, $periodEnd])
-            ->with(['registrations.client', 'template'])
-            ->get();
-
         $totalTrainerFee = 0;
         $totalEntryFee = 0;
         $items = [];
 
-        // Get system settings for no_show and cancellation handling
-        // For now, we'll use default behavior: attended only
-        // TODO: Implement system settings retrieval when settings table is configured
+        // ========================================
+        // 1. Individual Events (1:1 sessions)
+        // ========================================
+        $events = Event::where('staff_id', $trainerId)
+            ->whereBetween('starts_at', [$periodStart, $periodEnd])
+            ->where('type', 'INDIVIDUAL')
+            ->with(['client.user', 'serviceType'])
+            ->get();
+
+        foreach ($events as $event) {
+            // Check if event should be included (attended status or has fees set)
+            if (!$this->shouldIncludeEventInSettlement($event)) {
+                continue;
+            }
+
+            $entryFee = $event->entry_fee_brutto ?? 0;
+            $trainerFee = $event->trainer_fee_brutto ?? 0;
+
+            $totalTrainerFee += $trainerFee;
+            $totalEntryFee += $entryFee;
+
+            $items[] = [
+                'event_id' => $event->id,
+                'class_occurrence_id' => null,
+                'client_id' => $event->client_id,
+                'registration_id' => null,
+                'entry_fee_brutto' => $entryFee,
+                'trainer_fee_brutto' => $trainerFee,
+                'currency' => $event->currency ?? 'HUF',
+                'status' => $event->attendance_status ?? 'scheduled',
+                'type' => 'individual',
+                // Additional info for preview
+                'class_name' => '1:1 ' . ($event->serviceType->name ?? 'Edzés'),
+                'client_name' => $event->client->user->name ?? 'Unknown',
+                'class_date' => $event->starts_at->toIso8601String(),
+            ];
+        }
+
+        // ========================================
+        // 2. Group Class Occurrences
+        // ========================================
+        $occurrences = ClassOccurrence::where('trainer_id', $trainerId)
+            ->whereBetween('starts_at', [$periodStart, $periodEnd])
+            ->with(['registrations.client', 'template'])
+            ->get();
 
         foreach ($occurrences as $occurrence) {
             foreach ($occurrence->registrations as $registration) {
@@ -140,6 +177,7 @@ class PricingService
                     $totalEntryFee += $fees['entry_fee'];
 
                     $items[] = [
+                        'event_id' => null,
                         'class_occurrence_id' => $occurrence->id,
                         'client_id' => $registration->client_id,
                         'registration_id' => $registration->id,
@@ -147,6 +185,7 @@ class PricingService
                         'trainer_fee_brutto' => $fees['trainer_fee'],
                         'currency' => $pricing['currency'],
                         'status' => $registration->status,
+                        'type' => 'group',
                         // Additional info for preview
                         'class_name' => $occurrence->template->title ?? 'Unknown',
                         'client_name' => $registration->client->full_name ?? 'Unknown',
@@ -154,7 +193,6 @@ class PricingService
                     ];
                 } catch (MissingPricingException $e) {
                     // Log this but continue processing other registrations
-                    // In production, you might want to track these for admin review
                     \Log::warning('Missing pricing for settlement calculation', [
                         'trainer_id' => $trainerId,
                         'occurrence_id' => $occurrence->id,
@@ -185,6 +223,38 @@ class PricingService
         // For no_show and cancelled, this would check system settings
         // For now, only include attended
         // TODO: Implement settings-based logic when settings system is ready
+
+        return false;
+    }
+
+    /**
+     * Determine if an individual event should be included in settlement.
+     * Individual events are included if:
+     * - They are marked as 'attended', OR
+     * - They have fees set (entry_fee_brutto or trainer_fee_brutto > 0) and status is not 'cancelled'
+     */
+    private function shouldIncludeEventInSettlement(Event $event): bool
+    {
+        // Attended events always count
+        if ($event->attendance_status === 'attended') {
+            return true;
+        }
+
+        // Cancelled events never count
+        if ($event->status === 'cancelled' || $event->attendance_status === 'cancelled') {
+            return false;
+        }
+
+        // No-show events don't count
+        if ($event->attendance_status === 'no_show') {
+            return false;
+        }
+
+        // Include events with fees set (scheduled events with pricing)
+        // This allows seeing planned revenue even before check-in
+        if (($event->entry_fee_brutto ?? 0) > 0 || ($event->trainer_fee_brutto ?? 0) > 0) {
+            return true;
+        }
 
         return false;
     }
