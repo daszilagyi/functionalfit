@@ -1,6 +1,7 @@
 {
   "title": "Calendar",
   "myCalendar": "My Calendar",
+  "addEvent": "Add Event",
   "today": "Today",
   "todayTomorrow": "Today + Tomorrow",
   "weekView": "Week View",

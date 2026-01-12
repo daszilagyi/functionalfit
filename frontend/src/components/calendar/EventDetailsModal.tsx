@@ -24,9 +24,10 @@ interface EventDetailsModalProps {
   onEventUpdated?: () => void
   onEdit?: (event: Event) => void
   isAdmin?: boolean
+  canEdit?: boolean // true if user can edit this event (admin or owner)
 }
 
-export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, onEdit, isAdmin }: EventDetailsModalProps) {
+export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, onEdit, isAdmin, canEdit }: EventDetailsModalProps) {
   const { t, i18n } = useTranslation('calendar')
   const { toast } = useToast()
   const queryClient = useQueryClient()
@@ -798,7 +799,7 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, o
               {t('actions.delete')}
             </Button>
             <div className="flex gap-2">
-              {isAdmin && onEdit && (
+              {(isAdmin || canEdit) && onEdit && (
                 <Button onClick={() => onEdit(event)}>
                   {t('common.edit')}
                 </Button>

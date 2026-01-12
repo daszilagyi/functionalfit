@@ -9,7 +9,7 @@ import interactionPlugin from '@fullcalendar/interaction'
 import { eventsApi, eventKeys } from '@/api/events'
 import { roomsApi, roomKeys } from '@/api/rooms'
 import { classesApi, classKeys } from '@/api/classes'
-import { Check, X, AlertTriangle } from 'lucide-react'
+import { Check, X, AlertTriangle, Plus } from 'lucide-react'
 import { isSameDayMove } from '@/lib/validations/event'
 import { useToast } from '@/hooks/use-toast'
 import { EventFormModal } from '@/components/calendar/EventFormModal'
@@ -441,6 +441,30 @@ export default function CalendarPage() {
     setCurrentView('timeGridDay')
   }
 
+  // Handle "add event" button click
+  const handleAddEventClick = () => {
+    // Create default time slot: current time rounded up to next half hour, with 1 hour duration
+    const now = new Date()
+    const minutes = now.getMinutes()
+    const roundedMinutes = minutes < 30 ? 30 : 60
+    const start = new Date(now)
+    start.setMinutes(roundedMinutes, 0, 0)
+    if (roundedMinutes === 60) {
+      start.setHours(start.getHours() + 1)
+      start.setMinutes(0)
+    }
+    const end = new Date(start.getTime() + 60 * 60 * 1000) // 1 hour later
+
+    setSelectedSlot({ start, end })
+
+    // Admin users can choose between individual and group class
+    if (isAdmin) {
+      setEventTypeSelectorOpen(true)
+    } else {
+      setCreateModalOpen(true)
+    }
+  }
+
   // Custom event content renderer to show attendance status icon
   const renderEventContent = (eventInfo: { event: { title: string; extendedProps: { isGroupClass: boolean; event?: Event } }; timeText: string }) => {
     const { event: eventData } = eventInfo.event.extendedProps
@@ -622,7 +646,13 @@ export default function CalendarPage() {
     <div className="w-full px-2 py-4 sm:container sm:px-4 sm:py-6">
       {/* Header - stacked on mobile, row on desktop */}
       <div className="flex flex-col gap-4 mb-4 sm:mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold">{t('myCalendar')}</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <h1 className="text-2xl sm:text-3xl font-bold">{t('myCalendar')}</h1>
+          <Button onClick={handleAddEventClick} className="w-full sm:w-auto">
+            <Plus className="h-4 w-4 mr-2" />
+            {t('addEvent')}
+          </Button>
+        </div>
 
         {/* Controls - wrapped on mobile */}
         <div className="flex flex-wrap gap-2 items-center">
@@ -740,7 +770,7 @@ export default function CalendarPage() {
         }}
         initialData={selectedSlot ? {
           starts_at: selectedSlot.start.toISOString(),
-          duration_minutes: Math.round((selectedSlot.end.getTime() - selectedSlot.start.getTime()) / 60000),
+          duration_minutes: Math.max(60, Math.round((selectedSlot.end.getTime() - selectedSlot.start.getTime()) / 60000)),
         } : undefined}
         editingEvent={editingEvent}
         isAdmin={isAdmin}
@@ -762,6 +792,7 @@ export default function CalendarPage() {
             })
           }}
           isAdmin={isAdmin}
+          canEdit={isEventOwner(selectedEvent)}
           onEdit={(event) => {
             setEditingEvent(event)
             setDetailsModalOpen(false)
@@ -799,7 +830,7 @@ export default function CalendarPage() {
         }}
         initialData={selectedSlot ? {
           starts_at: selectedSlot.start.toISOString(),
-          duration_minutes: Math.round((selectedSlot.end.getTime() - selectedSlot.start.getTime()) / 60000),
+          duration_minutes: Math.max(60, Math.round((selectedSlot.end.getTime() - selectedSlot.start.getTime()) / 60000)),
         } : undefined}
         editingOccurrence={editingClass}
         onSuccess={() => {

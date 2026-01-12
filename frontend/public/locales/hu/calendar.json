@@ -1,6 +1,7 @@
 {
   "title": "Naptár",
   "myCalendar": "Naptáram",
+  "addEvent": "Esemény hozzáadása",
   "today": "Mai nap",
   "todayTomorrow": "Ma + Holnap",
   "weekView": "Heti nézet",
