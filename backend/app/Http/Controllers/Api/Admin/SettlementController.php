@@ -147,16 +147,22 @@ class SettlementController extends Controller
                 'total_entry_fee' => $calculation['total_entry_fee'],
                 'status' => 'draft',
                 'notes' => $validated['notes'] ?? null,
-                'created_by' => $validated['created_by'],
+                'created_by' => auth()->id(),
             ]);
 
             // Create settlement items
             foreach ($calculation['items'] as $item) {
+                // Skip individual events for now (settlement_items table doesn't have event_id column yet)
+                // Individual events are included in totals but not saved as separate items
+                if (empty($item['class_occurrence_id'])) {
+                    continue;
+                }
+
                 SettlementItem::create([
                     'settlement_id' => $settlement->id,
                     'class_occurrence_id' => $item['class_occurrence_id'],
                     'client_id' => $item['client_id'],
-                    'registration_id' => $item['registration_id'],
+                    'registration_id' => $item['registration_id'] ?? 0,
                     'entry_fee_brutto' => $item['entry_fee_brutto'],
                     'trainer_fee_brutto' => $item['trainer_fee_brutto'],
                     'currency' => $item['currency'],
