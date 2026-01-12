@@ -42,13 +42,8 @@ class EventPolicy
             return true;
         }
 
-        // Staff can only update their own events
+        // Staff can update their own events (including past events)
         if ($user->isStaff() && $event->staff->user_id === $user->id) {
-            // Check if event is in the past
-            if ($event->starts_at < now()) {
-                return false;
-            }
-
             return true;
         }
 
