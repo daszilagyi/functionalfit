@@ -344,11 +344,7 @@ class AdminEventController extends Controller
     {
         $event = Event::findOrFail($id);
 
-        // Prevent deletion of past events
-        if ($event->starts_at < now()) {
-            return ApiResponse::error('Past events cannot be deleted', 403);
-        }
-
+        // Admin can delete any event (including past events)
         $event->delete();
 
         return ApiResponse::success(null, 'Event deleted successfully');

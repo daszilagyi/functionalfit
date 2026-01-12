@@ -39,8 +39,9 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, o
   // Get additional clients list (support both snake_case and camelCase)
   const additionalClientsList = event.additional_clients || event.additionalClients || []
 
-  // Check if event start time is in the past (cannot delete past events)
+  // Check if event start time is in the past (staff cannot delete past events, admin can)
   const eventStartsInPast = isPast(new Date(event.starts_at))
+  const canDeleteEvent = isAdmin || !eventStartsInPast
 
   // Check if event is past and can be checked in (for any guest)
   const eventIsPastAndIndividual = event.status === 'scheduled' && isPast(new Date(event.ends_at)) && event.type === 'INDIVIDUAL'
@@ -797,13 +798,13 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, o
               <Button
                 variant="destructive"
                 onClick={handleDelete}
-                disabled={deleteMutation.isPending || eventStartsInPast}
+                disabled={deleteMutation.isPending || !canDeleteEvent}
                 data-testid="event-delete-btn"
-                title={eventStartsInPast ? t('event.cannotDeletePastEvent') : undefined}
+                title={!canDeleteEvent ? t('event.cannotDeletePastEvent') : undefined}
               >
                 {t('actions.delete')}
               </Button>
-              {eventStartsInPast && (
+              {!canDeleteEvent && (
                 <span className="text-xs text-muted-foreground">{t('event.cannotDeletePastEvent')}</span>
               )}
             </div>
