@@ -9,6 +9,9 @@
   "selectRoom": "Válassz termet",
   "allRooms": "Minden terem",
   "showGroupClasses": "Csoportos órák mutatása",
+  "showMyEvents": "Saját eseményeim",
+  "showAllEvents": "Összes esemény",
+  "event.otherTrainerEvent": "Másik edző eseménye",
   "viewMode": {
     "week": "Heti nézet",
     "day": "Napi nézet",

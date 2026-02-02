@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import {
   AlertDialog,
@@ -62,9 +63,10 @@ export default function CalendarPage() {
     start: new Date(),
     end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days ahead
   })
-  const [currentView, setCurrentView] = useState<'timeGridWeek' | 'timeGridDay' | 'timeGridTwoDay'>('timeGridWeek')
+  const [currentView, setCurrentView] = useState<'timeGridWeek' | 'timeGridDay' | 'timeGridTwoDay'>('timeGridTwoDay')
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null)
   const [showGroupClasses, setShowGroupClasses] = useState(true)
+  const [showOnlyMyEvents, setShowOnlyMyEvents] = useState(false)
   const [eventTypeSelectorOpen, setEventTypeSelectorOpen] = useState(false)
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [classFormModalOpen, setClassFormModalOpen] = useState(false)
@@ -194,7 +196,12 @@ export default function CalendarPage() {
 
   // Map events to FullCalendar format
   // Personal training events (INDIVIDUAL, BLOCK) - use room color
-  const individualEvents = events?.map(event => {
+  // Staff can filter to show only their own events
+  const filteredEvents = (isStaff && showOnlyMyEvents)
+    ? events?.filter(event => isEventOwner(event))
+    : events
+
+  const individualEvents = filteredEvents?.map(event => {
     const canEdit = isEventOwner(event)
     const roomColor = getRoomColor(event.room_id)
     return {
@@ -202,8 +209,9 @@ export default function CalendarPage() {
       title: getEventTitle(event),
       start: event.starts_at,
       end: event.ends_at,
-      backgroundColor: canEdit ? roomColor : roomColor + '80', // 50% opacity for non-owned
-      borderColor: roomColor,
+      backgroundColor: roomColor,
+      borderColor: (isStaff && !canEdit) ? '#ef4444' : roomColor,
+      classNames: (isStaff && !canEdit) ? ['fc-event-not-owned'] : [],
       editable: canEdit,
       startEditable: canEdit, // Allow drag & drop only for owned events
       durationEditable: canEdit, // Allow resize only for owned events
@@ -267,23 +275,12 @@ export default function CalendarPage() {
   // Handle event click
   const handleEventClick = (clickInfo: EventClickArg) => {
     const isGroupClass = clickInfo.event.extendedProps.isGroupClass
-    const isOwner = clickInfo.event.extendedProps.isOwner
 
     if (isGroupClass) {
       const classOccurrence = clickInfo.event.extendedProps.classOccurrence as ClassOccurrence
       setSelectedClass(classOccurrence)
       setClassDetailsModalOpen(true)
     } else {
-      // Check if staff owns this event - if not, show toast and don't open details
-      if (!isOwner && isStaff) {
-        toast({
-          variant: 'default',
-          title: t('errors.notYourEvent', 'Ez nem a te eseményed'),
-          description: t('errors.cannotViewOthersEvents', 'Csak a saját eseményeid adatait tekintheted meg.'),
-        })
-        return
-      }
-
       const event = clickInfo.event.extendedProps.event as Event
       setSelectedEvent(event)
       setDetailsModalOpen(true)
@@ -670,11 +667,34 @@ export default function CalendarPage() {
               <SelectItem value="all">{t('allRooms')}</SelectItem>
               {rooms?.map((room) => (
                 <SelectItem key={room.id} value={String(room.id)}>
-                  {room.name}
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="inline-block w-3 h-3 rounded-full shrink-0"
+                      style={{ backgroundColor: room.color || '#3b82f6' }}
+                    />
+                    {room.name}
+                  </span>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+
+          {/* Staff: My events / All events toggle */}
+          {isStaff && (
+            <div className="flex items-center gap-3 px-3 py-2 border rounded-md bg-background">
+              <Switch
+                id="show-only-my-events"
+                checked={!showOnlyMyEvents}
+                onCheckedChange={(checked) => setShowOnlyMyEvents(!checked)}
+              />
+              <Label
+                htmlFor="show-only-my-events"
+                className="text-sm font-medium cursor-pointer whitespace-nowrap"
+              >
+                {showOnlyMyEvents ? t('showMyEvents') : t('showAllEvents')}
+              </Label>
+            </div>
+          )}
 
           {/* Group classes checkbox */}
           <div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-background">

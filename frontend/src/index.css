@@ -151,6 +151,12 @@
   float: left;
 }
 
+/* Not-owned event border - red 2px */
+.fc-event-not-owned {
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+
 /* FullCalendar Mobile Responsive Styles */
 @media (max-width: 640px) {
   /* Reduce header toolbar size */
@@ -171,6 +177,19 @@
   .fc .fc-button {
     padding: 0.25rem 0.5rem !important;
     font-size: 0.75rem !important;
+  }
+
+  /* Larger prev/next navigation buttons on mobile with spacing */
+  .fc .fc-prev-button,
+  .fc .fc-next-button {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 1.1rem !important;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+  }
+
+  .fc .fc-prev-button {
+    margin-right: 0.5rem !important;
   }
 
   /* Reduce time slot label width */

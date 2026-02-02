@@ -9,6 +9,9 @@
   "selectRoom": "Select room",
   "allRooms": "All rooms",
   "showGroupClasses": "Show group classes",
+  "showMyEvents": "My events",
+  "showAllEvents": "All events",
+  "event.otherTrainerEvent": "Other trainer's event",
   "viewMode": {
     "week": "Week View",
     "day": "Day View",

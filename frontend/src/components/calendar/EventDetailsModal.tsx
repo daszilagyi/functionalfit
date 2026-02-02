@@ -172,27 +172,27 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, o
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6 w-[calc(100vw-1rem)] sm:w-full">
           <DialogHeader>
-            <div className="flex items-center justify-between">
-              <DialogTitle>{t('event.eventDetails')}</DialogTitle>
-              <div className="flex gap-2">
-                <Badge variant={getTypeBadgeVariant(event.type)}>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <DialogTitle className="text-base sm:text-lg">{t('event.eventDetails')}</DialogTitle>
+              <div className="flex gap-1.5 flex-wrap">
+                <Badge variant={getTypeBadgeVariant(event.type)} className="text-xs">
                   {t(`event.eventType.${event.type}`)}
                 </Badge>
-                <Badge variant={getStatusBadgeVariant(event.status)}>
+                <Badge variant={getStatusBadgeVariant(event.status)} className="text-xs">
                   {t(`event.status.${event.status}`)}
                 </Badge>
               </div>
             </div>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {/* Participants Information (for INDIVIDUAL events) */}
             {event.type === 'INDIVIDUAL' && (event.client || (event.additional_clients && event.additional_clients.length > 0) || (event.additionalClients && event.additionalClients.length > 0)) && (
               <div className="space-y-2">
-                <Label className="text-lg font-semibold">{t('event.participants')}</Label>
-                <div className="pl-4 space-y-3">
+                <Label className="text-sm sm:text-lg font-semibold">{t('event.participants')}</Label>
+                <div className="pl-2 sm:pl-4 space-y-2 sm:space-y-3">
                   {/* Main client first */}
                   {event.client && (() => {
                     const client = event.client
@@ -347,8 +347,8 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, o
 
             {/* Time Information */}
             <div className="space-y-2">
-              <Label className="text-lg font-semibold">{t('event.timeInformation')}</Label>
-              <div className="grid grid-cols-2 gap-4 pl-4">
+              <Label className="text-sm sm:text-lg font-semibold">{t('event.timeInformation')}</Label>
+              <div className="grid grid-cols-2 gap-2 sm:gap-4 pl-2 sm:pl-4">
                 <div>
                   <Label className="text-muted-foreground">{t('form.date')}</Label>
                   <div className="font-medium">{formatDate(event.starts_at)}</div>
@@ -374,8 +374,8 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, o
             {event.room && (
               <>
                 <div className="space-y-2">
-                  <Label className="text-lg font-semibold">{t('event.locationInformation')}</Label>
-                  <div className="grid grid-cols-2 gap-4 pl-4">
+                  <Label className="text-sm sm:text-lg font-semibold">{t('event.locationInformation')}</Label>
+                  <div className="grid grid-cols-2 gap-2 sm:gap-4 pl-2 sm:pl-4">
                     <div>
                       <Label className="text-muted-foreground">{t('form.room')}</Label>
                       <div className="font-medium">{event.room.name}</div>
@@ -400,8 +400,8 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, o
             {event.staff && (
               <>
                 <div className="space-y-2">
-                  <Label className="text-lg font-semibold">{t('event.staffInformation')}</Label>
-                  <div className="grid grid-cols-2 gap-4 pl-4">
+                  <Label className="text-sm sm:text-lg font-semibold">{t('event.staffInformation')}</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 pl-2 sm:pl-4">
                     <div>
                       <Label className="text-muted-foreground">{t('event.staffName')}</Label>
                       <div className="font-medium">{event.staff.user.name}</div>
@@ -420,8 +420,8 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, o
             {event.notes && (
               <>
                 <div className="space-y-2">
-                  <Label className="text-lg font-semibold">{t('form.notes')}</Label>
-                  <div className="pl-4 text-sm">{event.notes}</div>
+                  <Label className="text-sm sm:text-lg font-semibold">{t('form.notes')}</Label>
+                  <div className="pl-2 sm:pl-4 text-sm">{event.notes}</div>
                 </div>
                 <Separator />
               </>
@@ -463,10 +463,10 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, o
               return (
                 <>
                   <div className="space-y-2">
-                    <Label className="text-lg font-semibold">{t('form.pricing')}</Label>
-                    <div className="pl-4">
-                      <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
-                        <div className="grid grid-cols-2 gap-4 text-sm">
+                    <Label className="text-sm sm:text-lg font-semibold">{t('form.pricing')}</Label>
+                    <div className="pl-2 sm:pl-4">
+                      <div className="bg-blue-50 p-2 sm:p-3 rounded-md border border-blue-200">
+                        <div className="grid grid-cols-2 gap-2 sm:gap-4 text-sm">
                           <div>
                             <p className="text-muted-foreground">{t('form.entryFee')} ({t('form.subtotal')})</p>
                             <p className="font-medium text-lg">{formatCurrency(totalEntryFee)}</p>
@@ -490,12 +490,12 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, o
               )
             })()}
 
-            {/* Check-in Section (for past events that haven't been checked in) */}
-            {canCheckIn && (
+            {/* Check-in Section (for past events that haven't been checked in) - only for event owners */}
+            {canCheckIn && canEdit && (
               <>
-                <div className="space-y-4">
-                  <Label className="text-lg font-semibold">{t('event.checkIn')}</Label>
-                  <div className="pl-4 space-y-4">
+                <div className="space-y-3 sm:space-y-4">
+                  <Label className="text-sm sm:text-lg font-semibold">{t('event.checkIn')}</Label>
+                  <div className="pl-2 sm:pl-4 space-y-3 sm:space-y-4">
                     {/* Notes field */}
                     <div className="space-y-2">
                       <Label htmlFor="checkin-notes">{t('event.checkInNotes')}</Label>
@@ -730,12 +730,12 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, o
               return (
                 <>
                   <div className="space-y-2">
-                    <Label className="text-lg font-semibold">{t('event.attendanceInformation')}</Label>
-                    <div className="pl-4 space-y-2">
+                    <Label className="text-sm sm:text-lg font-semibold">{t('event.attendanceInformation')}</Label>
+                    <div className="pl-2 sm:pl-4 space-y-2">
                       {attendanceRecords.map((record, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 border rounded-md">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-sm">{record.name}</span>
+                        <div key={index} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 p-2 border rounded-md">
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                            <span className="font-medium text-xs sm:text-sm">{record.name}</span>
                             {record.isMain && (
                               <Badge variant="outline" className="text-xs">
                                 {t('event.mainGuest')}
@@ -771,8 +771,8 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, o
 
             {/* Metadata */}
             <div className="space-y-2">
-              <Label className="text-lg font-semibold">{t('event.metadata')}</Label>
-              <div className="grid grid-cols-2 gap-4 pl-4 text-sm text-muted-foreground">
+              <Label className="text-sm sm:text-lg font-semibold">{t('event.metadata')}</Label>
+              <div className="grid grid-cols-2 gap-2 sm:gap-4 pl-2 sm:pl-4 text-xs sm:text-sm text-muted-foreground">
                 <div>
                   <Label className="text-muted-foreground">{t('event.createdAt')}</Label>
                   <div>{formatDateTime(event.created_at)}</div>
@@ -793,28 +793,34 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, o
             </div>
           </div>
 
-          <DialogFooter className="flex items-center justify-between">
-            <div className="flex flex-col items-start gap-1">
-              <Button
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={deleteMutation.isPending || !canDeleteEvent}
-                data-testid="event-delete-btn"
-                title={!canDeleteEvent ? t('event.cannotDeletePastEvent') : undefined}
-              >
-                {t('actions.delete')}
-              </Button>
-              {!canDeleteEvent && (
-                <span className="text-xs text-muted-foreground">{t('event.cannotDeletePastEvent')}</span>
-              )}
-            </div>
-            <div className="flex gap-2">
+          <DialogFooter className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 pt-2">
+            {canEdit ? (
+              <div className="flex flex-col items-start gap-1">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={deleteMutation.isPending || !canDeleteEvent}
+                  data-testid="event-delete-btn"
+                  title={!canDeleteEvent ? t('event.cannotDeletePastEvent') : undefined}
+                  className="w-full sm:w-auto"
+                >
+                  {t('actions.delete')}
+                </Button>
+                {!canDeleteEvent && (
+                  <span className="text-xs text-muted-foreground">{t('event.cannotDeletePastEvent')}</span>
+                )}
+              </div>
+            ) : (
+              <div />
+            )}
+            <div className="flex gap-2 w-full sm:w-auto">
               {(isAdmin || canEdit) && onEdit && (
-                <Button onClick={() => onEdit(event)}>
+                <Button size="sm" onClick={() => onEdit(event)} className="flex-1 sm:flex-none">
                   {t('common.edit')}
                 </Button>
               )}
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
+              <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
                 {t('actions.close')}
               </Button>
             </div>

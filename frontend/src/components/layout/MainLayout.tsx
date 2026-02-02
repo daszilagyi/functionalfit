@@ -10,7 +10,7 @@ export default function MainLayout() {
   const { t } = useTranslation()
   const location = useLocation()
   const { user } = useAuth()
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024)
   const [adminMenuOpen, setAdminMenuOpen] = useState(location.pathname.startsWith('/admin'))
 
   const navigation = [
