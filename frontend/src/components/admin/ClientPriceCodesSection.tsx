@@ -258,78 +258,141 @@ export function ClientPriceCodesSection({ clientId }: ClientPriceCodesSectionPro
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>{t('admin:clientPriceCodes.title')}</CardTitle>
-          <Button size="sm" onClick={handleOpenCreateModal}>
-            <Plus className="h-4 w-4 mr-2" />
-            {t('admin:clientPriceCodes.add')}
+        <CardHeader className="flex flex-row items-center justify-between gap-2 pb-4">
+          <CardTitle className="text-base sm:text-lg">{t('admin:clientPriceCodes.title')}</CardTitle>
+          <Button size="sm" onClick={handleOpenCreateModal} className="shrink-0">
+            <Plus className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">{t('admin:clientPriceCodes.add')}</span>
           </Button>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 sm:px-6">
           {priceCodes && priceCodes.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('admin:clientPriceCodes.serviceType')}</TableHead>
-                  <TableHead>{t('admin:clientPriceCodes.priceCode')}</TableHead>
-                  <TableHead className="text-right">{t('admin:clientPriceCodes.entryFee')}</TableHead>
-                  <TableHead className="text-right">{t('admin:clientPriceCodes.trainerFee')}</TableHead>
-                  <TableHead>{t('admin:clientPriceCodes.validFrom')}</TableHead>
-                  <TableHead>{t('admin:clientPriceCodes.status')}</TableHead>
-                  <TableHead className="text-right">{t('common:actions')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Mobile Card View */}
+              <div className="sm:hidden space-y-3">
                 {priceCodes.map((pc: ClientPriceCode) => (
-                  <TableRow key={pc.id}>
-                    <TableCell className="font-medium">
-                      {pc.service_type?.name || pc.service_type_id}
-                    </TableCell>
-                    <TableCell>{pc.price_code || '-'}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(pc.entry_fee_brutto)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(pc.trainer_fee_brutto)}</TableCell>
-                    <TableCell>
-                      {new Date(pc.valid_from).toLocaleDateString('hu-HU')}
-                      {pc.valid_until && (
-                        <span className="text-muted-foreground">
-                          {' - '}
-                          {new Date(pc.valid_until).toLocaleDateString('hu-HU')}
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
+                  <div key={pc.id} className="border rounded-lg p-3 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm truncate">
+                          {pc.service_type?.name || pc.service_type_id}
+                        </p>
+                        {pc.price_code && (
+                          <p className="text-xs text-muted-foreground">{pc.price_code}</p>
+                        )}
+                      </div>
                       <Badge
                         variant={pc.is_active ? 'default' : 'secondary'}
-                        className="cursor-pointer"
+                        className="cursor-pointer text-xs shrink-0"
                         onClick={() => toggleActiveMutation.mutate(pc.id)}
                       >
                         {pc.is_active ? t('common:active') : t('common:inactive')}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleOpenEditModal(pc)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleteConfirmId(pc.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-muted-foreground">{t('admin:clientPriceCodes.entryFee')}:</span>
+                        <p className="font-medium">{formatCurrency(pc.entry_fee_brutto)}</p>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                      <div>
+                        <span className="text-muted-foreground">{t('admin:clientPriceCodes.trainerFee')}:</span>
+                        <p className="font-medium">{formatCurrency(pc.trainer_fee_brutto)}</p>
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(pc.valid_from).toLocaleDateString('hu-HU')}
+                      {pc.valid_until && ` - ${new Date(pc.valid_until).toLocaleDateString('hu-HU')}`}
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleOpenEditModal(pc)}
+                      >
+                        <Pencil className="h-3 w-3 mr-1" />
+                        {t('common:edit')}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-destructive"
+                        onClick={() => setDeleteConfirmId(pc.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden sm:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t('admin:clientPriceCodes.serviceType')}</TableHead>
+                      <TableHead>{t('admin:clientPriceCodes.priceCode')}</TableHead>
+                      <TableHead className="text-right">{t('admin:clientPriceCodes.entryFee')}</TableHead>
+                      <TableHead className="text-right">{t('admin:clientPriceCodes.trainerFee')}</TableHead>
+                      <TableHead>{t('admin:clientPriceCodes.validFrom')}</TableHead>
+                      <TableHead>{t('admin:clientPriceCodes.status')}</TableHead>
+                      <TableHead className="text-right">{t('common:actions')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {priceCodes.map((pc: ClientPriceCode) => (
+                      <TableRow key={pc.id}>
+                        <TableCell className="font-medium">
+                          {pc.service_type?.name || pc.service_type_id}
+                        </TableCell>
+                        <TableCell>{pc.price_code || '-'}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(pc.entry_fee_brutto)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(pc.trainer_fee_brutto)}</TableCell>
+                        <TableCell>
+                          {new Date(pc.valid_from).toLocaleDateString('hu-HU')}
+                          {pc.valid_until && (
+                            <span className="text-muted-foreground">
+                              {' - '}
+                              {new Date(pc.valid_until).toLocaleDateString('hu-HU')}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={pc.is_active ? 'default' : 'secondary'}
+                            className="cursor-pointer"
+                            onClick={() => toggleActiveMutation.mutate(pc.id)}
+                          >
+                            {pc.is_active ? t('common:active') : t('common:inactive')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleOpenEditModal(pc)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDeleteConfirmId(pc.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           ) : (
-            <p className="text-center text-muted-foreground py-8">
+            <p className="text-center text-muted-foreground py-8 text-sm">
               {t('admin:clientPriceCodes.noPriceCodes')}
             </p>
           )}
@@ -338,9 +401,9 @@ export function ClientPriceCodesSection({ clientId }: ClientPriceCodesSectionPro
 
       {/* Create/Edit Modal */}
       <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="w-[95vw] max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-lg">
               {editingPriceCode
                 ? t('admin:clientPriceCodes.editTitle')
                 : t('admin:clientPriceCodes.createTitle')}
@@ -348,7 +411,7 @@ export function ClientPriceCodesSection({ clientId }: ClientPriceCodesSectionPro
           </DialogHeader>
 
           <form onSubmit={onSubmit} className="space-y-4">
-            <div className="grid gap-4">
+            <div className="grid gap-3">
               {/* Service Type */}
               <div className="grid gap-2">
                 <Label>{t('admin:clientPriceCodes.serviceType')}</Label>
@@ -446,11 +509,11 @@ export function ClientPriceCodesSection({ clientId }: ClientPriceCodesSectionPro
               </div>
             </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseModal} disabled={isPending}>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              <Button type="button" variant="outline" onClick={handleCloseModal} disabled={isPending} className="w-full sm:w-auto">
                 {t('common:cancel')}
               </Button>
-              <Button type="submit" disabled={isPending}>
+              <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
                 {isPending ? t('common:saving') : t('common:save')}
               </Button>
             </DialogFooter>
@@ -460,19 +523,20 @@ export function ClientPriceCodesSection({ clientId }: ClientPriceCodesSectionPro
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>{t('admin:clientPriceCodes.deleteConfirmTitle')}</DialogTitle>
           </DialogHeader>
-          <p>{t('admin:clientPriceCodes.deleteConfirmMessage')}</p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>
+          <p className="text-sm text-muted-foreground">{t('admin:clientPriceCodes.deleteConfirmMessage')}</p>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setDeleteConfirmId(null)} className="w-full sm:w-auto">
               {t('common:cancel')}
             </Button>
             <Button
               variant="destructive"
               onClick={() => deleteConfirmId && deleteMutation.mutate(deleteConfirmId)}
               disabled={deleteMutation.isPending}
+              className="w-full sm:w-auto"
             >
               {deleteMutation.isPending ? t('common:deleting') : t('common:delete')}
             </Button>

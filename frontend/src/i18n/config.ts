@@ -8,7 +8,8 @@ i18n
   .init({
     lng: 'hu', // default language (Hungarian)
     fallbackLng: 'en',
-    ns: ['common', 'auth', 'calendar', 'classes', 'staff', 'client', 'admin', 'public'],
+    ns: ['common', 'auth', 'calendar', 'classes', 'staff', 'client', 'admin', 'public', 'settings'],
+    preload: ['hu', 'en'], // Preload languages to ensure translations are ready
     defaultNS: 'common',
     backend: {
       loadPath: '/locales/{{lng}}/{{ns}}.json',

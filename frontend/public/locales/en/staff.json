@@ -1,6 +1,39 @@
 {
   "title": "Staff Dashboard",
   "subtitle": "View your today's statistics and export reports",
+  "activity": {
+    "title": "My Activity",
+    "subtitle": "View your upcoming and past sessions",
+    "individualSession": "1:1 Session",
+    "groupSession": "Group Class",
+    "additionalClients": "additional guests",
+    "stats": {
+      "totalEvents": "Total Events (month)",
+      "totalHours": "Hours Worked",
+      "totalClients": "Total Clients",
+      "attendanceRate": "Attendance Rate"
+    },
+    "tabs": {
+      "upcoming": "Upcoming Events",
+      "history": "History"
+    },
+    "upcoming": {
+      "title": "Upcoming Events",
+      "eventsCount": "upcoming events",
+      "noEvents": "No upcoming events"
+    },
+    "history": {
+      "title": "Activity History",
+      "eventsCount": "completed events",
+      "noEvents": "No history to display"
+    },
+    "status": {
+      "scheduled": "Scheduled",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "noShow": "No Show"
+    }
+  },
   "stats": {
     "todaySessions": "Today's Sessions",
     "todayCompleted": "Today Completed",

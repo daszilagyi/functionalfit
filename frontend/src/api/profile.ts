@@ -62,6 +62,6 @@ export const profileApi = {
    * Change current user's password
    */
   changePassword: async (data: ChangePasswordRequest): Promise<void> => {
-    await apiClient.post('/profile/change-password', data)
+    await apiClient.post('/auth/change-password', data)
   },
 }

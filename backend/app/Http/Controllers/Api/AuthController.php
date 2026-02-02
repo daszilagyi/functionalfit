@@ -208,4 +208,36 @@ class AuthController extends Controller
 
         return ApiResponse::error('Failed to reset password. The link may have expired.', null, 400);
     }
+
+    /**
+     * Change password for authenticated user
+     *
+     * POST /api/v1/auth/change-password
+     */
+    public function changePassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|min:8|confirmed',
+        ]);
+
+        $user = $request->user();
+
+        // Verify current password
+        if (!Hash::check($request->input('current_password'), $user->password)) {
+            return ApiResponse::error('The current password is incorrect.', null, 422);
+        }
+
+        // Prevent setting the same password
+        if (Hash::check($request->input('new_password'), $user->password)) {
+            return ApiResponse::error('The new password must be different from the current password.', null, 422);
+        }
+
+        // Update password
+        $user->update([
+            'password' => Hash::make($request->input('new_password')),
+        ]);
+
+        return ApiResponse::success(null, 'Password changed successfully.');
+    }
 }

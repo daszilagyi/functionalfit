@@ -25,21 +25,39 @@ class ClientController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Client::with('user')
-            ->whereHas('user', function ($q) {
-                $q->where('role', 'client');
-            });
+            ->select('clients.*')
+            ->join('users', 'clients.user_id', '=', 'users.id')
+            ->where('users.role', 'client');
 
         // Search filter
         if ($request->has('search') && strlen($request->input('search')) >= 2) {
             $search = $request->input('search');
-            $query->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->where('users.name', 'like', "%{$search}%")
+                    ->orWhere('users.email', 'like', "%{$search}%")
+                    ->orWhere('users.phone', 'like', "%{$search}%");
             });
         }
 
-        $clients = $query->orderBy('created_at', 'desc')
+        // Sorting
+        $sortBy = $request->input('sort_by', 'created_at');
+        $sortDir = $request->input('sort_dir', 'desc');
+
+        // Validate sort parameters
+        $allowedSortFields = ['name', 'email', 'created_at'];
+        if (!in_array($sortBy, $allowedSortFields)) {
+            $sortBy = 'created_at';
+        }
+        $sortDir = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
+
+        // Map sort field to actual column
+        $sortColumn = match ($sortBy) {
+            'name' => 'users.name',
+            'email' => 'users.email',
+            default => 'clients.created_at',
+        };
+
+        $clients = $query->orderBy($sortColumn, $sortDir)
             ->paginate(50);
 
         // Transform the response
@@ -131,6 +149,7 @@ class ClientController extends Controller
             'emergency_contact_name' => $client->emergency_contact_name,
             'emergency_contact_phone' => $client->emergency_contact_phone,
             'notes' => $client->notes,
+            'daily_training_notification' => $client->daily_training_notification ?? true,
             'created_at' => $client->created_at,
         ]);
     }
@@ -157,6 +176,7 @@ class ClientController extends Controller
             'emergency_contact_name' => ['nullable', 'string', 'max:255'],
             'emergency_contact_phone' => ['nullable', 'string', 'max:20'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'daily_training_notification' => ['sometimes', 'boolean'],
         ]);
 
         try {
@@ -179,6 +199,7 @@ class ClientController extends Controller
                 if (array_key_exists('emergency_contact_name', $validated)) $clientFields['emergency_contact_name'] = $validated['emergency_contact_name'];
                 if (array_key_exists('emergency_contact_phone', $validated)) $clientFields['emergency_contact_phone'] = $validated['emergency_contact_phone'];
                 if (array_key_exists('notes', $validated)) $clientFields['notes'] = $validated['notes'];
+                if (array_key_exists('daily_training_notification', $validated)) $clientFields['daily_training_notification'] = $validated['daily_training_notification'];
 
                 if (!empty($clientFields)) {
                     $client->update($clientFields);
@@ -197,6 +218,7 @@ class ClientController extends Controller
                     'emergency_contact_name' => $client->emergency_contact_name,
                     'emergency_contact_phone' => $client->emergency_contact_phone,
                     'notes' => $client->notes,
+                    'daily_training_notification' => $client->daily_training_notification ?? true,
                     'created_at' => $client->created_at,
                 ], 'Vendég sikeresen frissítve');
             });

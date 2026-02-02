@@ -143,6 +143,7 @@ use App\Http\Controllers\Api\Admin\EmailTemplateController;
 use App\Http\Controllers\Api\Admin\EventChangeController;
 use App\Http\Controllers\Api\Admin\CalendarChangeController;
 use App\Http\Controllers\Api\Admin\AdminEventController;
+use App\Http\Controllers\Api\Admin\AdminSettingsController;
 use App\Http\Controllers\Api\Staff\StaffParticipantController;
 use App\Http\Controllers\Api\WebhookController;
 use App\Http\Controllers\Api\ServiceTypeController;
@@ -174,6 +175,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/me', [AuthController::class, 'me'])->middleware('auth:sanctum');
         Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
         Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+        Route::post('/change-password', [AuthController::class, 'changePassword'])->middleware('auth:sanctum');
     });
 
     // Settings routes (public - no authentication required)
@@ -260,10 +262,14 @@ Route::prefix('v1')->group(function () {
         // STAFF ROUTES
         // ============================================
         Route::prefix('staff')->middleware('role:staff,admin')->group(function () {
+            // Staff dashboard
+            Route::get('/dashboard', [StaffEventController::class, 'dashboard']);
+
             // Staff events (1:1)
             Route::get('/my-events', [StaffEventController::class, 'index']);
             Route::get('/all-events', [StaffEventController::class, 'allEvents']);
             Route::post('/events', [StaffEventController::class, 'store']);
+            Route::post('/events/preview-recurring', [StaffEventController::class, 'previewRecurring']);
             Route::patch('/events/{id}', [StaffEventController::class, 'update']);
             Route::delete('/events/{id}', [StaffEventController::class, 'destroy']);
 
@@ -374,6 +380,7 @@ Route::prefix('v1')->group(function () {
             // Admin events (all events with room filtering)
             Route::get('/events', [AdminEventController::class, 'index']);
             Route::post('/events', [AdminEventController::class, 'store']);
+            Route::post('/events/preview-recurring', [AdminEventController::class, 'previewRecurring']);
             Route::get('/events/{id}', [AdminEventController::class, 'show']);
             Route::put('/events/{id}', [AdminEventController::class, 'update']);
             Route::delete('/events/{id}', [AdminEventController::class, 'destroy']);
@@ -430,6 +437,13 @@ Route::prefix('v1')->group(function () {
             // Client CSV Import
             Route::post('clients/import', [App\Http\Controllers\Api\Admin\ClientImportController::class, 'import']);
             Route::get('clients/import/service-types', [App\Http\Controllers\Api\Admin\ClientImportController::class, 'serviceTypes']);
+
+            // Admin settings
+            Route::prefix('settings')->group(function () {
+                Route::get('/notifications', [AdminSettingsController::class, 'getNotificationSettings']);
+                Route::put('/notifications', [AdminSettingsController::class, 'updateNotificationSettings']);
+                Route::post('/notifications/send-daily-schedules', [AdminSettingsController::class, 'sendDailySchedules']);
+            });
 
             // Google Calendar Sync
             Route::prefix('google-calendar-sync')->group(function () {

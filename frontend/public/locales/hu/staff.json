@@ -1,6 +1,39 @@
 {
   "title": "Edzői Dashboard",
   "subtitle": "Nézd meg a mai statisztikáidat és exportálj jelentéseket",
+  "activity": {
+    "title": "Aktivitásom",
+    "subtitle": "Nézd meg a közelgő és múltbeli edzéseidet",
+    "individualSession": "1:1 Edzés",
+    "groupSession": "Csoportos óra",
+    "additionalClients": "további vendég",
+    "stats": {
+      "totalEvents": "Összes esemény (hónap)",
+      "totalHours": "Ledolgozott órák",
+      "totalClients": "Vendégek száma",
+      "attendanceRate": "Részvételi arány"
+    },
+    "tabs": {
+      "upcoming": "Közelgő események",
+      "history": "Előzmények"
+    },
+    "upcoming": {
+      "title": "Közelgő események",
+      "eventsCount": "közelgő esemény",
+      "noEvents": "Nincs közelgő eseményed"
+    },
+    "history": {
+      "title": "Aktivitási előzmények",
+      "eventsCount": "befejezett esemény",
+      "noEvents": "Nincs megjeleníthető előzmény"
+    },
+    "status": {
+      "scheduled": "Tervezett",
+      "completed": "Teljesítve",
+      "cancelled": "Lemondva",
+      "noShow": "Nem jelent meg"
+    }
+  },
   "stats": {
     "todaySessions": "Mai Edzések",
     "todayCompleted": "Ma Teljesített",

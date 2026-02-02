@@ -80,6 +80,12 @@
     "actions": {
       "create": "Létrehozás",
       "cancel": "Mégse"
+    },
+    "pastEventConfirmation": {
+      "title": "Múltbeli esemény",
+      "message": "Az általad rögzíteni kívánt esemény korábbi a mostani dátumnál. Biztosan a múltba szeretnéd rögzíteni az eseményt?",
+      "confirm": "Igen, mentés a múltba",
+      "cancel": "Mégse"
     }
   },
   "classes": {

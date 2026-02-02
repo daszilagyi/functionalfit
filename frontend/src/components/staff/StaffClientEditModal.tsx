@@ -26,6 +26,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
 import {
   Table,
   TableBody,
@@ -48,6 +49,7 @@ const clientEditSchema = z.object({
   emergency_contact_name: z.string().optional().nullable(),
   emergency_contact_phone: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  daily_training_notification: z.boolean().default(true),
 })
 
 type ClientEditFormData = z.infer<typeof clientEditSchema>
@@ -105,6 +107,7 @@ export function StaffClientEditModal({
       emergency_contact_name: '',
       emergency_contact_phone: '',
       notes: '',
+      daily_training_notification: true,
     },
   })
 
@@ -135,6 +138,7 @@ export function StaffClientEditModal({
         emergency_contact_name: client.emergency_contact_name || '',
         emergency_contact_phone: client.emergency_contact_phone || '',
         notes: client.notes || '',
+        daily_training_notification: client.daily_training_notification ?? true,
       })
     }
   }, [client, open, form])
@@ -230,6 +234,7 @@ export function StaffClientEditModal({
       emergency_contact_name: data.emergency_contact_name || undefined,
       emergency_contact_phone: data.emergency_contact_phone || undefined,
       notes: data.notes || undefined,
+      daily_training_notification: data.daily_training_notification,
     })
   })
 
@@ -383,6 +388,24 @@ export function StaffClientEditModal({
                     <Label htmlFor="notes">Megjegyzések</Label>
                     <Textarea id="notes" {...form.register('notes')} disabled={updateMutation.isPending} rows={3} />
                   </div>
+
+                  {/* Notification preferences */}
+                  <div className="pt-4 border-t">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="daily_training_notification">Napi edzés értesítés</Label>
+                        <p className="text-sm text-muted-foreground">
+                          A vendég kap értesítést a napi edzéseiről
+                        </p>
+                      </div>
+                      <Switch
+                        id="daily_training_notification"
+                        checked={form.watch('daily_training_notification')}
+                        onCheckedChange={(checked) => form.setValue('daily_training_notification', checked)}
+                        disabled={updateMutation.isPending}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <DialogFooter>
@@ -398,68 +421,113 @@ export function StaffClientEditModal({
 
             <TabsContent value="pricing" className="mt-4">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between py-3">
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 py-3">
                   <CardTitle className="text-lg">Árkódok</CardTitle>
-                  <Button size="sm" onClick={handleOpenCreatePriceCodeModal}>
+                  <Button size="sm" onClick={handleOpenCreatePriceCodeModal} className="w-full sm:w-auto">
                     <Plus className="h-4 w-4 mr-2" />
                     Új árkód
                   </Button>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-2 sm:px-6">
                   {isLoadingPriceCodes ? (
                     <p className="text-center text-muted-foreground py-4">Betöltés...</p>
                   ) : priceCodes && priceCodes.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Szolgáltatás</TableHead>
-                          <TableHead className="text-right">Belépődíj</TableHead>
-                          <TableHead className="text-right">Edzői díj</TableHead>
-                          <TableHead>Érvényesség</TableHead>
-                          <TableHead>Státusz</TableHead>
-                          <TableHead className="text-right">Műveletek</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
+                    <>
+                      {/* Mobile card view */}
+                      <div className="space-y-3 sm:hidden">
                         {priceCodes.map((pc: ClientPriceCode) => (
-                          <TableRow key={pc.id}>
-                            <TableCell className="font-medium">
-                              {pc.service_type?.name || pc.service_type_id}
-                            </TableCell>
-                            <TableCell className="text-right">{formatCurrency(pc.entry_fee_brutto)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(pc.trainer_fee_brutto)}</TableCell>
-                            <TableCell>
-                              {new Date(pc.valid_from).toLocaleDateString('hu-HU')}
-                              {pc.valid_until && (
-                                <span className="text-muted-foreground">
-                                  {' - '}
-                                  {new Date(pc.valid_until).toLocaleDateString('hu-HU')}
-                                </span>
-                              )}
-                            </TableCell>
-                            <TableCell>
+                          <div key={pc.id} className="border rounded-lg p-3 space-y-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-medium truncate">{pc.service_type?.name || pc.service_type_id}</span>
                               <Badge
                                 variant={pc.is_active ? 'default' : 'secondary'}
-                                className="cursor-pointer"
+                                className="cursor-pointer shrink-0"
                                 onClick={() => toggleActiveMutation.mutate(pc.id)}
                               >
                                 {pc.is_active ? 'Aktív' : 'Inaktív'}
                               </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button variant="ghost" size="icon" onClick={() => handleOpenEditPriceCodeModal(pc)}>
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" onClick={() => setDeleteConfirmId(pc.id)}>
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <div>
+                                <span className="text-muted-foreground">Belépődíj:</span>
+                                <div className="font-medium">{formatCurrency(pc.entry_fee_brutto)}</div>
                               </div>
-                            </TableCell>
-                          </TableRow>
+                              <div>
+                                <span className="text-muted-foreground">Edzői díj:</span>
+                                <div className="font-medium">{formatCurrency(pc.trainer_fee_brutto)}</div>
+                              </div>
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {new Date(pc.valid_from).toLocaleDateString('hu-HU')}
+                              {pc.valid_until && ` - ${new Date(pc.valid_until).toLocaleDateString('hu-HU')}`}
+                            </div>
+                            <div className="flex gap-2 pt-2 border-t">
+                              <Button variant="outline" size="sm" className="flex-1" onClick={() => handleOpenEditPriceCodeModal(pc)}>
+                                <Pencil className="h-4 w-4 mr-1" />
+                                Szerkesztés
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => setDeleteConfirmId(pc.id)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </div>
                         ))}
-                      </TableBody>
-                    </Table>
+                      </div>
+                      {/* Desktop table view */}
+                      <div className="hidden sm:block overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Szolgáltatás</TableHead>
+                              <TableHead className="text-right">Belépődíj</TableHead>
+                              <TableHead className="text-right">Edzői díj</TableHead>
+                              <TableHead>Érvényesség</TableHead>
+                              <TableHead>Státusz</TableHead>
+                              <TableHead className="text-right">Műveletek</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {priceCodes.map((pc: ClientPriceCode) => (
+                              <TableRow key={pc.id}>
+                                <TableCell className="font-medium">
+                                  {pc.service_type?.name || pc.service_type_id}
+                                </TableCell>
+                                <TableCell className="text-right">{formatCurrency(pc.entry_fee_brutto)}</TableCell>
+                                <TableCell className="text-right">{formatCurrency(pc.trainer_fee_brutto)}</TableCell>
+                                <TableCell>
+                                  {new Date(pc.valid_from).toLocaleDateString('hu-HU')}
+                                  {pc.valid_until && (
+                                    <span className="text-muted-foreground">
+                                      {' - '}
+                                      {new Date(pc.valid_until).toLocaleDateString('hu-HU')}
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge
+                                    variant={pc.is_active ? 'default' : 'secondary'}
+                                    className="cursor-pointer"
+                                    onClick={() => toggleActiveMutation.mutate(pc.id)}
+                                  >
+                                    {pc.is_active ? 'Aktív' : 'Inaktív'}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <Button variant="ghost" size="icon" onClick={() => handleOpenEditPriceCodeModal(pc)}>
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" onClick={() => setDeleteConfirmId(pc.id)}>
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </>
                   ) : (
                     <p className="text-center text-muted-foreground py-8">
                       Nincsenek egyedi árkódok beállítva

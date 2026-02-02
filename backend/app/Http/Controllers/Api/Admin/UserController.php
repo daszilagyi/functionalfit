@@ -59,7 +59,20 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->orderBy('created_at', 'desc')->paginate(20);
+        // Sorting
+        $sortBy = $request->input('sort_by', 'created_at');
+        $sortDir = $request->input('sort_dir', 'desc');
+        $allowedSortFields = ['name', 'email', 'created_at'];
+
+        if (in_array($sortBy, $allowedSortFields)) {
+            $query->orderBy($sortBy, $sortDir === 'asc' ? 'asc' : 'desc');
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
+        // Pagination
+        $perPage = min((int) $request->input('per_page', 100), 200);
+        $users = $query->paginate($perPage);
 
         return ApiResponse::success($users);
     }
@@ -135,7 +148,7 @@ class UserController extends Controller
                 $user->client->update($request->only($clientFields));
             }
 
-            $staffFields = ['specialization', 'bio', 'default_hourly_rate', 'is_available_for_booking'];
+            $staffFields = ['specialization', 'bio', 'default_hourly_rate', 'is_available_for_booking', 'daily_schedule_notification'];
             if ($user->staffProfile && $request->hasAny($staffFields)) {
                 $user->staffProfile->update($request->only($staffFields));
             }

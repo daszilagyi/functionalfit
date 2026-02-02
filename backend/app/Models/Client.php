@@ -36,6 +36,7 @@ class Client extends Model
         'email_reminder_2h',
         'gcal_sync_enabled',
         'gcal_calendar_id',
+        'daily_training_notification',
     ];
 
     protected function casts(): array
@@ -48,6 +49,7 @@ class Client extends Model
             'email_reminder_24h' => 'boolean',
             'email_reminder_2h' => 'boolean',
             'gcal_sync_enabled' => 'boolean',
+            'daily_training_notification' => 'boolean',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
             'deleted_at' => 'datetime',

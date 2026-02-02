@@ -18,7 +18,8 @@ export default function MainLayout() {
     // Calendar is only for staff and admin - clients book classes from the Classes page
     ...(user?.role === 'staff' || user?.role === 'admin' ? [{ name: t('navigation.calendar'), href: '/calendar', icon: Calendar }] : []),
     { name: t('navigation.classes'), href: '/classes', icon: Users },
-    { name: t('client:myActivity'), href: '/activity', icon: Activity },
+    // Activity page - staff see their sessions, clients see their bookings/passes
+    { name: user?.role === 'staff' || user?.role === 'admin' ? t('staff:activity.title') : t('client:myActivity'), href: '/activity', icon: Activity },
     ...(user?.role === 'staff' || user?.role === 'admin' ? [{ name: t('staff:title'), href: '/staff', icon: ClipboardList }] : []),
     // Clients management for staff and admin
     ...(user?.role === 'staff' || user?.role === 'admin' ? [{ name: 'Vendégek', href: '/clients', icon: UserPlus }] : []),
@@ -40,6 +41,7 @@ export default function MainLayout() {
     { name: t('admin:settlements.title'), href: '/admin/settlements', icon: Receipt },
     { name: t('admin:reports.title'), href: '/admin/reports', icon: FileText },
     { name: t('admin:eventChanges.title'), href: '/admin/event-changes', icon: History },
+    { name: t('admin:settings.title'), href: '/admin/settings', icon: Settings },
   ] : []
 
   const handleLogout = () => {

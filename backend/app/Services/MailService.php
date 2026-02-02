@@ -7,19 +7,20 @@ namespace App\Services;
 use App\Jobs\SendTemplatedEmail;
 use App\Models\EmailLog;
 use App\Models\EmailTemplate;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Log;
 
 class MailService
 {
     /**
-     * Default company name for template variables.
+     * Default company name for template variables (used when setting not configured).
      */
-    private const COMPANY_NAME = 'FunctionalFit Egeszsegkozpont';
+    private const DEFAULT_COMPANY_NAME = 'FunctionalFit Egeszsegkozpont';
 
     /**
-     * Default support email for template variables.
+     * Default support email for template variables (used when setting not configured).
      */
-    private const SUPPORT_EMAIL = 'support@functionalfit.hu';
+    private const DEFAULT_SUPPORT_EMAIL = 'support@functionalfit.hu';
 
     /**
      * Retry delays in seconds (15s, 30s, 60s).
@@ -208,8 +209,8 @@ class MailService
     private function mergeDefaultVariables(array $variables, ?string $recipientName = null): array
     {
         $defaults = [
-            'company_name' => self::COMPANY_NAME,
-            'support_email' => self::SUPPORT_EMAIL,
+            'company_name' => Setting::get('email_company_name', self::DEFAULT_COMPANY_NAME),
+            'support_email' => Setting::get('email_support_email', self::DEFAULT_SUPPORT_EMAIL),
             'current_year' => date('Y'),
         ];
 

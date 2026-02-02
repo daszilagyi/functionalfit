@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -45,6 +46,7 @@ const userEditSchema = z.object({
   bio: z.string().optional(),
   default_hourly_rate: z.number().optional(),
   is_available_for_booking: z.boolean().optional(),
+  daily_schedule_notification: z.boolean().optional(),
 })
 
 type UserEditFormData = z.infer<typeof userEditSchema>
@@ -81,6 +83,7 @@ export function UserEditModal({
       bio: '',
       default_hourly_rate: undefined,
       is_available_for_booking: true,
+      daily_schedule_notification: false,
     },
   })
 
@@ -103,6 +106,8 @@ export function UserEditModal({
         default_hourly_rate: user.staff_profile?.default_hourly_rate,
         is_available_for_booking:
           user.staff_profile?.is_available_for_booking ?? true,
+        daily_schedule_notification:
+          user.staff_profile?.daily_schedule_notification ?? false,
       })
     }
   }, [user, open, form])
@@ -148,6 +153,7 @@ export function UserEditModal({
       updateData.bio = data.bio || undefined
       updateData.default_hourly_rate = data.default_hourly_rate
       updateData.is_available_for_booking = data.is_available_for_booking
+      updateData.daily_schedule_notification = data.daily_schedule_notification
     }
 
     updateMutation.mutate(updateData)
@@ -322,19 +328,37 @@ export function UserEditModal({
               disabled={updateMutation.isPending}
             />
           </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="daily_schedule_notification"
+              checked={form.watch('daily_schedule_notification')}
+              onCheckedChange={(checked) =>
+                form.setValue('daily_schedule_notification', checked === true)
+              }
+              disabled={updateMutation.isPending}
+            />
+            <Label
+              htmlFor="daily_schedule_notification"
+              className="text-sm font-normal cursor-pointer"
+            >
+              {t('admin:users.dailyScheduleNotification', 'Napi programértesítés')}
+            </Label>
+          </div>
         </div>
       )}
 
-      <DialogFooter>
+      <DialogFooter className="flex-col sm:flex-row gap-2 pt-4">
         <Button
           type="button"
           variant="outline"
           onClick={handleClose}
           disabled={updateMutation.isPending}
+          className="w-full sm:w-auto"
         >
           {t('common:cancel', 'Cancel')}
         </Button>
-        <Button type="submit" disabled={updateMutation.isPending}>
+        <Button type="submit" disabled={updateMutation.isPending} className="w-full sm:w-auto">
           {updateMutation.isPending
             ? t('common:saving', 'Saving...')
             : t('common:save', 'Save')}
@@ -345,9 +369,9 @@ export function UserEditModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className={isClient ? 'sm:max-w-[700px]' : 'sm:max-w-[500px]'}>
+      <DialogContent className={`max-h-[90vh] overflow-y-auto ${isClient ? 'w-[95vw] sm:max-w-[700px]' : 'w-[95vw] sm:max-w-[500px]'}`}>
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-lg sm:text-xl truncate pr-8">
             {t('admin:users.editUser', 'Edit User')}: {user.name}
           </DialogTitle>
         </DialogHeader>
@@ -355,8 +379,8 @@ export function UserEditModal({
         {isClient && user.client?.id ? (
           <Tabs defaultValue="details" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="details">{t('admin:users.clientDetails', 'Client Details')}</TabsTrigger>
-              <TabsTrigger value="pricing">{t('admin:clientPriceCodes.title', 'Price Codes')}</TabsTrigger>
+              <TabsTrigger value="details" className="text-xs sm:text-sm">{t('admin:users.clientDetails', 'Client Details')}</TabsTrigger>
+              <TabsTrigger value="pricing" className="text-xs sm:text-sm">{t('admin:clientPriceCodes.title', 'Price Codes')}</TabsTrigger>
             </TabsList>
             <TabsContent value="details" className="mt-4">
               {renderBasicForm()}

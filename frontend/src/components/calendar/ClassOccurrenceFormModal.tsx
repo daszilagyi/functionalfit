@@ -81,6 +81,8 @@ export function ClassOccurrenceFormModal({
   const [showConflictDialog, setShowConflictDialog] = useState(false)
   const [conflictData, setConflictData] = useState<ConflictData | null>(null)
   const pendingUpdateRef = useRef<ClassOccurrenceFormData | null>(null)
+  const [showPastEventDialog, setShowPastEventDialog] = useState(false)
+  const pendingFormDataRef = useRef<ClassOccurrenceFormData | null>(null)
 
   const isEditing = !!editingOccurrence
 
@@ -140,12 +142,19 @@ export function ClassOccurrenceFormModal({
           duration_minutes: durationMinutes,
           max_capacity: editingOccurrence.capacity_override || editingOccurrence.class_template?.capacity || 10,
         })
-      } else if (initialData?.starts_at) {
-        // Creating new from slot selection
-        form.setValue('starts_at', format(new Date(initialData.starts_at), "yyyy-MM-dd'T'HH:mm"))
-        if (initialData.duration_minutes) {
-          form.setValue('duration_minutes', initialData.duration_minutes)
-        }
+      } else {
+        // Creating new - reset form with defaults (60 min duration)
+        form.reset({
+          class_template_id: '',
+          room_id: '',
+          trainer_id: '',
+          starts_at: initialData?.starts_at ? format(new Date(initialData.starts_at), "yyyy-MM-dd'T'HH:mm") : '',
+          duration_minutes: initialData?.duration_minutes || 60,
+          max_capacity: 10,
+          is_recurring: false,
+          repeat_from: '',
+          repeat_until: '',
+        })
       }
     }
   }, [open, initialData, editingOccurrence, form])
@@ -259,7 +268,15 @@ export function ClassOccurrenceFormModal({
 
   const isPending = createMutation.isPending || updateMutation.isPending
 
-  const onSubmit = form.handleSubmit((data) => {
+  // Helper to check if date is in the past
+  const isDateInPast = (dateString: string): boolean => {
+    const eventDate = new Date(dateString)
+    const now = new Date()
+    return eventDate < now
+  }
+
+  // Process form submission (called after past date confirmation if needed)
+  const processSubmit = (data: ClassOccurrenceFormData) => {
     if (isEditing) {
       // Store pending data for potential force override
       pendingUpdateRef.current = data
@@ -267,7 +284,33 @@ export function ClassOccurrenceFormModal({
     } else {
       createMutation.mutate(data)
     }
+  }
+
+  const onSubmit = form.handleSubmit((data) => {
+    // Check if the event date is in the past (only for new events, not edits)
+    if (!isEditing && isDateInPast(data.starts_at)) {
+      pendingFormDataRef.current = data
+      setShowPastEventDialog(true)
+      return
+    }
+
+    // Process submission directly
+    processSubmit(data)
   })
+
+  // Handle past event confirmation
+  const handleConfirmPastEvent = () => {
+    if (pendingFormDataRef.current) {
+      processSubmit(pendingFormDataRef.current)
+      pendingFormDataRef.current = null
+    }
+    setShowPastEventDialog(false)
+  }
+
+  const handleCancelPastEvent = () => {
+    setShowPastEventDialog(false)
+    pendingFormDataRef.current = null
+  }
 
   const handleClose = () => {
     onOpenChange(false)
@@ -555,6 +598,24 @@ export function ClassOccurrenceFormModal({
             <AlertDialogCancel onClick={handleCancelConflict}>{t('actions.cancel')}</AlertDialogCancel>
             <Button onClick={handleForceOverride} disabled={updateMutation.isPending}>
               {updateMutation.isPending ? t('common.loading') : t('conflict.continueAnyway')}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Past Event Confirmation Dialog */}
+      <AlertDialog open={showPastEventDialog} onOpenChange={setShowPastEventDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('pastEventConfirmation.title')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('pastEventConfirmation.message')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelPastEvent}>{t('pastEventConfirmation.cancel')}</AlertDialogCancel>
+            <Button onClick={handleConfirmPastEvent} disabled={isPending}>
+              {isPending ? t('common.loading') : t('pastEventConfirmation.confirm')}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

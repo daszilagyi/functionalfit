@@ -17,6 +17,9 @@ class ConflictDetectionService
     /**
      * Detect room booking conflicts for events and class occurrences.
      *
+     * NOTE: Conflict detection is DISABLED to allow overlapping events
+     * (e.g., clients joining at different times like 08:00, 08:30, 08:45)
+     *
      * @throws ConflictException
      */
     public function detectRoomConflict(
@@ -26,6 +29,9 @@ class ConflictDetectionService
         ?int $excludeEventId = null,
         ?int $excludeOccurrenceId = null
     ): bool {
+        // Conflict detection disabled - allow overlapping events
+        return false;
+
         // Check events table
         // Overlap logic: new_start < existing_end AND new_end > existing_start
         $eventConflict = Event::where('room_id', $room->id)
@@ -74,6 +80,9 @@ class ConflictDetectionService
     /**
      * Detect staff scheduling conflicts.
      *
+     * NOTE: Conflict detection is DISABLED to allow overlapping events
+     * (e.g., clients joining at different times like 08:00, 08:30, 08:45)
+     *
      * @throws ConflictException
      */
     public function detectStaffConflict(
@@ -83,6 +92,9 @@ class ConflictDetectionService
         ?int $excludeEventId = null,
         ?int $excludeOccurrenceId = null
     ): bool {
+        // Conflict detection disabled - allow overlapping events
+        return false;
+
         // Check events table
         // Overlap logic: new_start < existing_end AND new_end > existing_start
         $eventConflict = Event::where('staff_id', $staff->id)
@@ -131,6 +143,9 @@ class ConflictDetectionService
     /**
      * Check for conflicts without locking (for use within existing transactions).
      *
+     * NOTE: Conflict detection is DISABLED to allow overlapping events
+     * (e.g., clients joining at different times like 08:00, 08:30, 08:45)
+     *
      * @param int $roomId
      * @param \DateTime|Carbon $startsAt
      * @param \DateTime|Carbon $endsAt
@@ -147,6 +162,9 @@ class ConflictDetectionService
         ?int $excludeEventId = null,
         ?int $excludeClassOccurrenceId = null
     ): void {
+        // Conflict detection disabled - allow overlapping events
+        return;
+
         // Resolve models
         $room = Room::findOrFail($roomId);
         $staff = StaffProfile::findOrFail($staffId);
@@ -162,6 +180,9 @@ class ConflictDetectionService
 
     /**
      * Check for conflicts with pessimistic locking for critical sections.
+     *
+     * NOTE: Conflict detection is DISABLED to allow overlapping events
+     * (e.g., clients joining at different times like 08:00, 08:30, 08:45)
      */
     public function checkConflictsWithLock(
         Room $room,
@@ -170,6 +191,9 @@ class ConflictDetectionService
         Carbon $endsAt,
         ?int $excludeEventId = null
     ): void {
+        // Conflict detection disabled - allow overlapping events
+        return;
+
         DB::transaction(function () use ($room, $staff, $startsAt, $endsAt, $excludeEventId) {
             // Lock the room and staff records for this transaction
             $room->lockForUpdate()->find($room->id);
@@ -183,6 +207,9 @@ class ConflictDetectionService
     /**
      * Detect conflicts and return them as an array (for Google Calendar import).
      *
+     * NOTE: Conflict detection is DISABLED to allow overlapping events
+     * (e.g., clients joining at different times like 08:00, 08:30, 08:45)
+     *
      * @param int $roomId
      * @param \DateTime|Carbon $startsAt
      * @param \DateTime|Carbon $endsAt
@@ -195,6 +222,9 @@ class ConflictDetectionService
         \DateTime|Carbon $endsAt,
         ?int $excludeEventId = null
     ): array {
+        // Conflict detection disabled - allow overlapping events
+        return [];
+
         // Convert DateTime to Carbon if needed
         $startsAt = $startsAt instanceof Carbon ? $startsAt : Carbon::instance($startsAt);
         $endsAt = $endsAt instanceof Carbon ? $endsAt : Carbon::instance($endsAt);

@@ -4,8 +4,7 @@ vendor/
 
 # Environment files
 .env
-.env.local
-.env.*.local
+.env.*
 *.env
 
 # IDE / Editor
@@ -47,6 +46,30 @@ CLAUDE.md
 .mcp.json
 .playwright-mcp/
 openmemory.md
+tmpclaude-*
+frontend/tmpclaude-*
+nul
+
+# Temp working directories
+tmp/
+commands/
+
+# Test/debug PHP files
+backend/public/test.php
+backend/public/error_log
+backend/send_test_email.php
+backend/test_daily_email.php
+
+# Root level temp files
+index.html
+index.php
+admin_class_templates.json
+class_occurrence_detail.json
+class_occurrences_response.json
+class_templates_response.json
+client_classes.json
+/package.json
+/package-lock.json
 
 # Local documentation (not needed in repo)
 *_IMPLEMENTATION.md

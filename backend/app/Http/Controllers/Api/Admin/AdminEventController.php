@@ -75,8 +75,28 @@ class AdminEventController extends Controller
             'ends_at' => 'required|date|after:starts_at',
             'notes' => 'nullable|string|max:1000',
             'service_type_id' => 'nullable|exists:service_types,id',
+            // Recurring event fields
+            'is_recurring' => 'sometimes|boolean',
+            'repeat_from' => 'required_if:is_recurring,true|nullable|date',
+            'repeat_until' => 'required_if:is_recurring,true|nullable|date|after_or_equal:repeat_from',
+            'skip_dates' => 'nullable|array',
+            'skip_dates.*' => 'date',
         ]);
 
+        // Handle recurring events
+        if (!empty($validated['is_recurring'])) {
+            return $this->storeRecurring($request, $validated);
+        }
+
+        // Single event creation
+        return $this->storeSingle($request, $validated);
+    }
+
+    /**
+     * Create a single event
+     */
+    private function storeSingle(Request $request, array $validated): JsonResponse
+    {
         try {
             return DB::transaction(function () use ($request, $validated) {
                 // Check for conflicts
@@ -137,6 +157,220 @@ class AdminEventController extends Controller
         } catch (ConflictException $e) {
             return ApiResponse::conflict($e->getMessage(), $e->getDetails());
         }
+    }
+
+    /**
+     * Create recurring events (batch creation for admin)
+     */
+    private function storeRecurring(Request $request, array $validated): JsonResponse
+    {
+        $repeatFrom = \Carbon\Carbon::parse($validated['repeat_from']);
+        $repeatUntil = \Carbon\Carbon::parse($validated['repeat_until']);
+        $startsAt = \Carbon\Carbon::parse($validated['starts_at']);
+        $endsAt = \Carbon\Carbon::parse($validated['ends_at']);
+        $roomId = (int) $validated['room_id'];
+        $staffId = (int) $validated['staff_id'];
+        $skipDates = $validated['skip_dates'] ?? [];
+
+        // Calculate the duration of the event
+        $durationMinutes = $startsAt->diffInMinutes($endsAt);
+
+        // Get the day of the week from starts_at
+        $dayOfWeek = $startsAt->dayOfWeek;
+        $timeOfDay = $startsAt->format('H:i:s');
+
+        // Prepare base event data
+        $baseEventData = [
+            'type' => $validated['type'],
+            'staff_id' => $staffId,
+            'client_id' => $validated['client_id'] ?? null,
+            'room_id' => $roomId,
+            'notes' => $validated['notes'] ?? null,
+            'status' => 'scheduled',
+            'created_by' => $request->user()->id,
+        ];
+
+        // For INDIVIDUAL events, set service_type_id and resolve main client pricing
+        $serviceTypeId = null;
+        if ($validated['type'] === 'INDIVIDUAL' && !empty($validated['service_type_id'])) {
+            $serviceTypeId = (int) $validated['service_type_id'];
+            $baseEventData['service_type_id'] = $serviceTypeId;
+
+            // Resolve pricing for main client
+            if (!empty($validated['client_id']) && (int) $validated['client_id'] > 0) {
+                $mainClientPricing = $this->pricingService->resolvePricingForClient(
+                    (int) $validated['client_id'],
+                    $serviceTypeId
+                );
+                $baseEventData = array_merge($baseEventData, $mainClientPricing);
+            }
+        }
+
+        $additionalClientIds = $validated['additional_client_ids'] ?? [];
+        $createdEvents = [];
+        $skippedDates = [];
+
+        try {
+            return DB::transaction(function () use (
+                $repeatFrom, $repeatUntil, $dayOfWeek, $timeOfDay, $durationMinutes,
+                $roomId, $staffId, $skipDates, $baseEventData, $serviceTypeId, $additionalClientIds,
+                &$createdEvents, &$skippedDates
+            ) {
+                // Find the first occurrence of the correct day of week
+                $current = $repeatFrom->copy();
+                while ($current->dayOfWeek !== $dayOfWeek) {
+                    $current->addDay();
+                }
+
+                // Iterate through all weekly occurrences
+                while ($current->lte($repeatUntil)) {
+                    $dateString = $current->format('Y-m-d');
+
+                    // Skip if date is in skip_dates
+                    if (in_array($dateString, $skipDates)) {
+                        $skippedDates[] = $dateString;
+                        $current->addWeek();
+                        continue;
+                    }
+
+                    $eventStartsAt = $current->copy()->setTimeFromTimeString($timeOfDay);
+                    $eventEndsAt = $eventStartsAt->copy()->addMinutes($durationMinutes);
+
+                    // Check for conflicts (skip if conflict)
+                    $conflicts = $this->conflictService->detectConflicts(
+                        roomId: $roomId,
+                        startsAt: $eventStartsAt,
+                        endsAt: $eventEndsAt
+                    );
+
+                    if (!empty($conflicts)) {
+                        $skippedDates[] = $dateString;
+                        $current->addWeek();
+                        continue;
+                    }
+
+                    // Create the event
+                    $eventData = array_merge($baseEventData, [
+                        'starts_at' => $eventStartsAt,
+                        'ends_at' => $eventEndsAt,
+                    ]);
+
+                    $event = Event::create($eventData);
+
+                    // Attach additional clients with pricing if provided
+                    if (is_array($additionalClientIds) && !empty($additionalClientIds)) {
+                        $this->attachAdditionalClientsWithPricing(
+                            $event,
+                            $additionalClientIds,
+                            $serviceTypeId
+                        );
+                    }
+
+                    // Queue notification
+                    $this->notificationService->sendEventConfirmation($event);
+
+                    $createdEvents[] = $event->load(['client.user', 'additionalClients.user', 'staff.user', 'room', 'serviceType']);
+                    $current->addWeek();
+                }
+
+                if (empty($createdEvents)) {
+                    return ApiResponse::error('All dates have conflicts or were skipped. No events created.', null, 422);
+                }
+
+                $message = count($createdEvents) . ' event(s) created';
+                if (!empty($skippedDates)) {
+                    $message .= ', ' . count($skippedDates) . ' date(s) skipped';
+                }
+
+                return ApiResponse::created([
+                    'count' => count($createdEvents),
+                    'events' => $createdEvents,
+                    'skipped_dates' => $skippedDates,
+                ], $message);
+            });
+        } catch (ConflictException $e) {
+            return ApiResponse::conflict($e->getMessage(), $e->getDetails());
+        }
+    }
+
+    /**
+     * Preview recurring events (check for conflicts without creating)
+     *
+     * POST /api/admin/events/preview-recurring
+     */
+    public function previewRecurring(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'staff_id' => 'required|exists:staff_profiles,id',
+            'room_id' => 'required|exists:rooms,id',
+            'starts_at' => 'required|date',
+            'ends_at' => 'required|date|after:starts_at',
+            'repeat_from' => 'required|date',
+            'repeat_until' => 'required|date|after_or_equal:repeat_from',
+        ]);
+
+        $repeatFrom = \Carbon\Carbon::parse($validated['repeat_from']);
+        $repeatUntil = \Carbon\Carbon::parse($validated['repeat_until']);
+        $startsAt = \Carbon\Carbon::parse($validated['starts_at']);
+        $endsAt = \Carbon\Carbon::parse($validated['ends_at']);
+        $roomId = (int) $validated['room_id'];
+        $staffId = (int) $validated['staff_id'];
+
+        // Calculate the duration of the event
+        $durationMinutes = $startsAt->diffInMinutes($endsAt);
+
+        // Get the day of the week from starts_at
+        $dayOfWeek = $startsAt->dayOfWeek;
+        $timeOfDay = $startsAt->format('H:i:s');
+
+        // Generate all dates in the interval
+        $dates = [];
+        $current = $repeatFrom->copy();
+
+        // Find the first occurrence of the correct day of week
+        while ($current->dayOfWeek !== $dayOfWeek) {
+            $current->addDay();
+        }
+
+        // Generate all weekly occurrences
+        while ($current->lte($repeatUntil)) {
+            $eventStartsAt = $current->copy()->setTimeFromTimeString($timeOfDay);
+            $eventEndsAt = $eventStartsAt->copy()->addMinutes($durationMinutes);
+
+            // Check for conflicts
+            $conflicts = $this->conflictService->detectConflicts(
+                roomId: $roomId,
+                startsAt: $eventStartsAt,
+                endsAt: $eventEndsAt
+            );
+
+            $dateEntry = [
+                'date' => $current->format('Y-m-d'),
+                'starts_at' => $eventStartsAt->toIso8601String(),
+                'ends_at' => $eventEndsAt->toIso8601String(),
+                'status' => empty($conflicts) ? 'ok' : 'conflict',
+            ];
+
+            if (!empty($conflicts)) {
+                // Get the first conflict's description
+                $firstConflict = $conflicts[0];
+                $conflictTime = \Carbon\Carbon::parse($firstConflict['starts_at'])->format('H:i');
+                $dateEntry['conflict_with'] = ($firstConflict['client_name'] ?? 'Foglalás') . ' - ' . $conflictTime;
+            }
+
+            $dates[] = $dateEntry;
+            $current->addWeek();
+        }
+
+        $okCount = count(array_filter($dates, fn($d) => $d['status'] === 'ok'));
+        $conflictCount = count(array_filter($dates, fn($d) => $d['status'] === 'conflict'));
+
+        return ApiResponse::success([
+            'dates' => $dates,
+            'total' => count($dates),
+            'ok_count' => $okCount,
+            'conflict_count' => $conflictCount,
+        ]);
     }
 
     /**

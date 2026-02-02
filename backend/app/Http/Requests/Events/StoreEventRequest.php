@@ -26,12 +26,44 @@ class StoreEventRequest extends FormRequest
             'starts_at' => ['required', 'date'],
             'ends_at' => ['required', 'date', 'after:starts_at'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            // Recurring event fields
+            'is_recurring' => ['sometimes', 'boolean'],
+            'repeat_from' => ['required_if:is_recurring,true', 'nullable', 'date'],
+            'repeat_until' => ['required_if:is_recurring,true', 'nullable', 'date', 'after_or_equal:repeat_from'],
+            'skip_dates' => ['nullable', 'array'],
+            'skip_dates.*' => ['date'],
         ];
     }
 
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
+            // Validate recurring event constraints
+            if ($this->input('is_recurring')) {
+                // Only INDIVIDUAL events can be recurring
+                if ($this->input('type') !== 'INDIVIDUAL') {
+                    $validator->errors()->add(
+                        'is_recurring',
+                        'Only INDIVIDUAL events can be recurring.'
+                    );
+                }
+
+                // Validate max interval (1 year = 52 weeks)
+                $repeatFrom = $this->input('repeat_from');
+                $repeatUntil = $this->input('repeat_until');
+                if ($repeatFrom && $repeatUntil) {
+                    $from = \Carbon\Carbon::parse($repeatFrom);
+                    $until = \Carbon\Carbon::parse($repeatUntil);
+                    $diffInDays = $from->diffInDays($until);
+                    if ($diffInDays > 365) {
+                        $validator->errors()->add(
+                            'repeat_until',
+                            'The recurring interval cannot exceed 1 year (365 days).'
+                        );
+                    }
+                }
+            }
+
             // Validate that INDIVIDUAL events have at least one guest and a service type
             if ($this->input('type') === 'INDIVIDUAL') {
                 $clientId = $this->input('client_id');

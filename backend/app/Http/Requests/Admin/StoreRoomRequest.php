@@ -17,11 +17,19 @@ class StoreRoomRequest extends FormRequest
     public function rules(): array
     {
         $isUpdate = $this->isMethod('PATCH') || $this->isMethod('PUT');
+        $roomId = $this->route('room');
+
+        $googleCalendarIdRule = ['nullable', 'string'];
+        if ($isUpdate && $roomId) {
+            $googleCalendarIdRule[] = Rule::unique('rooms', 'google_calendar_id')->ignore($roomId);
+        } else {
+            $googleCalendarIdRule[] = 'unique:rooms,google_calendar_id';
+        }
 
         return [
             'site_id' => [$isUpdate ? 'sometimes' : 'required', 'integer', 'exists:sites,id'],
-            'name' => ['required', 'string', 'max:255'],
-            'google_calendar_id' => ['nullable', 'string', 'unique:rooms,google_calendar_id'],
+            'name' => [$isUpdate ? 'sometimes' : 'required', 'string', 'max:255'],
+            'google_calendar_id' => $googleCalendarIdRule,
             'color' => ['nullable', 'string', 'max:7'], // Hex color code
             'capacity' => ['nullable', 'integer', 'min:1'],
         ];

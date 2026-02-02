@@ -14,11 +14,13 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { MultiClientPicker } from './MultiClientPicker'
 import { StaffPicker } from './StaffPicker'
+import { RecurringPreviewDialog } from './RecurringPreviewDialog'
 import { useToast } from '@/hooks/use-toast'
-import type { Event } from '@/types/event'
+import type { Event, RecurringPreviewDate } from '@/types/event'
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/types/api'
 import type { ServiceType } from '@/types/serviceType'
@@ -55,13 +57,24 @@ export function EventFormModal({ open, onOpenChange, initialData, editingEvent, 
   const [selectedClientIds, setSelectedClientIds] = useState<number[]>([])
   const [showConflictDialog, setShowConflictDialog] = useState(false)
   const [conflictData, setConflictData] = useState<ConflictData | null>(null)
+  const [showPastEventDialog, setShowPastEventDialog] = useState(false)
+  const pendingFormDataRef = useRef<CreateEventFormData | null>(null)
   const [selectedServiceTypeId, setSelectedServiceTypeId] = useState<number | null>(null)
+  // Recurring event state
+  const [isRecurring, setIsRecurring] = useState(false)
+  const [repeatFrom, setRepeatFrom] = useState('')
+  const [repeatUntil, setRepeatUntil] = useState('')
+  const [showRecurringPreviewDialog, setShowRecurringPreviewDialog] = useState(false)
+  const [recurringPreviewDates, setRecurringPreviewDates] = useState<RecurringPreviewDate[]>([])
+  const [recurringFormData, setRecurringFormData] = useState<CreateEventFormData | null>(null)
   const [resolvedPricing, setResolvedPricing] = useState<{
     entry_fee_brutto: number
     trainer_fee_brutto: number
     source: 'client_price_code' | 'service_type_default'
   } | null>(null)
   const pendingUpdateRef = useRef<{ id: string; updates: any } | null>(null)
+  // Track if we've initialized for the current open session to avoid re-resetting on re-renders
+  const hasInitializedRef = useRef(false)
   const isEditMode = !!editingEvent
 
   const form = useForm<CreateEventFormData>({
@@ -134,6 +147,7 @@ export function EventFormModal({ open, onOpenChange, initialData, editingEvent, 
   // Populate form when editing
   useEffect(() => {
     if (editingEvent && open) {
+      hasInitializedRef.current = true
       form.setValue('type', editingEvent.type)
       if (editingEvent.room_id) {
         form.setValue('room_id', editingEvent.room_id.toString())
@@ -180,8 +194,9 @@ export function EventFormModal({ open, onOpenChange, initialData, editingEvent, 
       if (editingEvent.service_type_id) {
         setSelectedServiceTypeId(editingEvent.service_type_id)
       }
-    } else if (open && !editingEvent) {
-      // Reset form to defaults when opening for new event
+    } else if (open && !editingEvent && !hasInitializedRef.current) {
+      // Reset form to defaults when opening for new event (only once per open session)
+      hasInitializedRef.current = true
       form.reset({
         type: 'INDIVIDUAL',
         staff_id: '',
@@ -194,11 +209,23 @@ export function EventFormModal({ open, onOpenChange, initialData, editingEvent, 
       setSelectedClientIds([])
       setSelectedServiceTypeId(null)
       setResolvedPricing(null)
+      // Reset recurring state
+      setIsRecurring(false)
+      setRepeatFrom('')
+      setRepeatUntil('')
     } else if (!open) {
-      // Reset when closing
+      // Reset when closing - also reset the initialization flag
+      hasInitializedRef.current = false
       setSelectedClientIds([])
       setSelectedServiceTypeId(null)
       setResolvedPricing(null)
+      // Reset recurring state
+      setIsRecurring(false)
+      setRepeatFrom('')
+      setRepeatUntil('')
+      setShowRecurringPreviewDialog(false)
+      setRecurringPreviewDates([])
+      setRecurringFormData(null)
     }
   }, [editingEvent, initialData, open, form])
 
@@ -277,6 +304,64 @@ export function EventFormModal({ open, onOpenChange, initialData, editingEvent, 
     },
   })
 
+  // Recurring preview mutation
+  const previewRecurringMutation = useMutation({
+    mutationFn: (data: any) => {
+      return isAdmin ? eventsApi.adminPreviewRecurring(data) : eventsApi.previewRecurring(data)
+    },
+    onSuccess: (response) => {
+      setRecurringPreviewDates(response.dates)
+      setShowRecurringPreviewDialog(true)
+    },
+    onError: (error: AxiosError<ApiError>) => {
+      const { data } = error.response ?? {}
+      toast({
+        variant: 'destructive',
+        title: t('common.error'),
+        description: data?.message || t('errors.createFailed'),
+      })
+    },
+  })
+
+  // Recurring create mutation
+  const createRecurringMutation = useMutation({
+    mutationFn: (data: any) => {
+      return isAdmin ? eventsApi.adminCreateRecurring(data) : eventsApi.createRecurring(data)
+    },
+    onSuccess: async (response) => {
+      await queryClient.refetchQueries({
+        queryKey: eventKeys.all,
+        type: 'active'
+      })
+      const skippedCount = response.skipped_dates?.length || 0
+      if (skippedCount > 0) {
+        toast({ title: t('success.recurringCreatedWithSkips', { count: response.count, skipped: skippedCount }) })
+      } else {
+        toast({ title: t('success.recurringCreated', { count: response.count }) })
+      }
+      setShowRecurringPreviewDialog(false)
+      onOpenChange(false)
+      form.reset()
+      setSelectedClientName('')
+      setSelectedStaffName('')
+      setSelectedClientIds([])
+      setSelectedServiceTypeId(null)
+      setResolvedPricing(null)
+      setIsRecurring(false)
+      setRepeatFrom('')
+      setRepeatUntil('')
+      setRecurringFormData(null)
+      onSuccess?.()
+    },
+    onError: (error: AxiosError<ApiError>) => {
+      const { status, data } = error.response ?? {}
+      let errorMessage = t('errors.createFailed')
+      if (status === 409) errorMessage = t('errors.conflict')
+      else if (status === 422 && data?.message) errorMessage = data.message
+      toast({ variant: 'destructive', title: t('common.error'), description: errorMessage })
+    },
+  })
+
   // Handle force override after user confirms
   const handleForceOverride = () => {
     if (pendingUpdateRef.current) {
@@ -297,27 +382,15 @@ export function EventFormModal({ open, onOpenChange, initialData, editingEvent, 
     pendingUpdateRef.current = null
   }
 
-  const onSubmit = form.handleSubmit((data) => {
-    // Validate INDIVIDUAL events have at least one guest
-    if (data.type === 'INDIVIDUAL' && selectedClientIds.length === 0) {
-      toast({
-        variant: 'destructive',
-        title: t('common.error'),
-        description: t('form.validation.clientRequired'),
-      })
-      return
-    }
+  // Helper to check if date is in the past
+  const isDateInPast = (dateString: string): boolean => {
+    const eventDate = new Date(dateString)
+    const now = new Date()
+    return eventDate < now
+  }
 
-    // Validate INDIVIDUAL events have a service type selected
-    if (data.type === 'INDIVIDUAL' && !selectedServiceTypeId) {
-      toast({
-        variant: 'destructive',
-        title: t('common.error'),
-        description: t('form.validation.serviceTypeRequired'),
-      })
-      return
-    }
-
+  // Process form submission (called after past date confirmation if needed)
+  const processSubmit = (data: CreateEventFormData) => {
     // Helper to format date without timezone offset (local time)
     const formatLocalDateTime = (date: Date) => format(date, "yyyy-MM-dd'T'HH:mm:ss")
 
@@ -401,7 +474,155 @@ export function EventFormModal({ open, onOpenChange, initialData, editingEvent, 
 
       createMutation.mutate(createData)
     }
+  }
+
+  const onSubmit = form.handleSubmit((data) => {
+    // Validate INDIVIDUAL events have at least one guest
+    if (data.type === 'INDIVIDUAL' && selectedClientIds.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: t('common.error'),
+        description: t('form.validation.clientRequired'),
+      })
+      return
+    }
+
+    // Validate INDIVIDUAL events have a service type selected
+    if (data.type === 'INDIVIDUAL' && !selectedServiceTypeId) {
+      toast({
+        variant: 'destructive',
+        title: t('common.error'),
+        description: t('form.validation.serviceTypeRequired'),
+      })
+      return
+    }
+
+    // Handle recurring events (only for new events, not edits)
+    if (!isEditMode && isRecurring) {
+      // Validate recurring interval
+      if (!repeatFrom || !repeatUntil) {
+        toast({
+          variant: 'destructive',
+          title: t('common.error'),
+          description: t('recurring.validation.intervalRequired'),
+        })
+        return
+      }
+
+      // Store form data for later use in recurring preview confirm
+      setRecurringFormData(data)
+
+      // Build preview request
+      const formatLocalDateTime = (date: Date) => format(date, "yyyy-MM-dd'T'HH:mm:ss")
+      const startsAt = new Date(data.starts_at)
+      const endsAt = new Date(startsAt.getTime() + (data.duration_minutes || 60) * 60000)
+
+      const previewData: any = {
+        type: data.type,
+        room_id: data.room_id,
+        starts_at: formatLocalDateTime(startsAt),
+        ends_at: formatLocalDateTime(endsAt),
+        repeat_from: repeatFrom,
+        repeat_until: repeatUntil,
+        is_recurring: true,
+      }
+
+      // Admin must provide staff_id
+      if (isAdmin && data.staff_id) {
+        previewData.staff_id = data.staff_id
+      }
+
+      // Handle multi-client and service type for INDIVIDUAL events (required by backend validation)
+      if (data.type === 'INDIVIDUAL' && selectedClientIds.length > 0) {
+        const firstId = selectedClientIds[0]
+        if (firstId > 0) {
+          previewData.client_id = firstId
+          previewData.additional_client_ids = selectedClientIds.slice(1)
+        } else {
+          previewData.additional_client_ids = selectedClientIds
+        }
+        if (selectedServiceTypeId) {
+          previewData.service_type_id = selectedServiceTypeId
+        }
+      }
+
+      // Trigger preview API call
+      previewRecurringMutation.mutate(previewData)
+      return
+    }
+
+    // Check if the event date is in the past (only for new events, not edits)
+    if (!isEditMode && isDateInPast(data.starts_at)) {
+      pendingFormDataRef.current = data
+      setShowPastEventDialog(true)
+      return
+    }
+
+    // Process submission directly
+    processSubmit(data)
   })
+
+  // Handle past event confirmation
+  const handleConfirmPastEvent = () => {
+    if (pendingFormDataRef.current) {
+      processSubmit(pendingFormDataRef.current)
+      pendingFormDataRef.current = null
+    }
+    setShowPastEventDialog(false)
+  }
+
+  const handleCancelPastEvent = () => {
+    setShowPastEventDialog(false)
+    pendingFormDataRef.current = null
+  }
+
+  // Handle recurring preview confirmation
+  const handleRecurringConfirm = (skipDates: string[]) => {
+    if (!recurringFormData) return
+
+    const formatLocalDateTime = (date: Date) => format(date, "yyyy-MM-dd'T'HH:mm:ss")
+    const startsAt = new Date(recurringFormData.starts_at)
+    const endsAt = new Date(startsAt.getTime() + (recurringFormData.duration_minutes || 60) * 60000)
+
+    const createData: any = {
+      type: recurringFormData.type,
+      room_id: recurringFormData.room_id,
+      starts_at: formatLocalDateTime(startsAt),
+      ends_at: formatLocalDateTime(endsAt),
+      notes: recurringFormData.notes || undefined,
+      is_recurring: true,
+      repeat_from: repeatFrom,
+      repeat_until: repeatUntil,
+      skip_dates: skipDates,
+    }
+
+    // Admin must provide staff_id
+    if (isAdmin && recurringFormData.staff_id) {
+      createData.staff_id = recurringFormData.staff_id
+    }
+
+    // Handle multi-client and service type for INDIVIDUAL events
+    if (recurringFormData.type === 'INDIVIDUAL' && selectedClientIds.length > 0) {
+      const firstId = selectedClientIds[0]
+      if (firstId > 0) {
+        createData.client_id = firstId
+        createData.additional_client_ids = selectedClientIds.slice(1)
+      } else {
+        createData.additional_client_ids = selectedClientIds
+      }
+      if (selectedServiceTypeId) {
+        createData.service_type_id = selectedServiceTypeId
+      }
+    }
+
+    createRecurringMutation.mutate(createData)
+  }
+
+  const handleRecurringCancel = () => {
+    setShowRecurringPreviewDialog(false)
+    setRecurringPreviewDates([])
+    setRecurringFormData(null)
+  }
 
   const handleClose = () => {
     onOpenChange(false)
@@ -411,6 +632,13 @@ export function EventFormModal({ open, onOpenChange, initialData, editingEvent, 
     setSelectedClientIds([])
     setSelectedServiceTypeId(null)
     setResolvedPricing(null)
+    // Reset recurring state
+    setIsRecurring(false)
+    setRepeatFrom('')
+    setRepeatUntil('')
+    setShowRecurringPreviewDialog(false)
+    setRecurringPreviewDates([])
+    setRecurringFormData(null)
   }
 
   const formatDateTimeLocal = (isoString: string) => {
@@ -418,7 +646,7 @@ export function EventFormModal({ open, onOpenChange, initialData, editingEvent, 
     return format(new Date(isoString), "yyyy-MM-dd'T'HH:mm")
   }
 
-  const isPending = createMutation.isPending || updateMutation.isPending
+  const isPending = createMutation.isPending || updateMutation.isPending || previewRecurringMutation.isPending || createRecurringMutation.isPending
 
   return (
     <>
@@ -533,6 +761,66 @@ export function EventFormModal({ open, onOpenChange, initialData, editingEvent, 
             <Textarea id="notes" {...form.register('notes')} placeholder={t('form.notesPlaceholder')} data-testid="event-notes-input" rows={4} />
             {form.formState.errors.notes && (<p className="text-sm text-destructive">{t(form.formState.errors.notes.message ?? '')}</p>)}
           </div>
+
+          {/* Recurring Event (only for INDIVIDUAL type and create mode) */}
+          {!isEditMode && selectedType === 'INDIVIDUAL' && (
+            <>
+              <div className="flex items-center space-x-2 pt-4 pb-2 border-t">
+                <Checkbox
+                  id="is-recurring"
+                  checked={isRecurring}
+                  onCheckedChange={(checked) => setIsRecurring(checked === true)}
+                  data-testid="event-recurring-checkbox"
+                />
+                <Label htmlFor="is-recurring" className="font-normal cursor-pointer">
+                  {t('recurring.label')}
+                </Label>
+              </div>
+
+              {/* Date interval - shown only when is_recurring is checked */}
+              {isRecurring && (
+                <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    {t('recurring.description')}
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Repeat From */}
+                    <div className="space-y-2">
+                      <Label htmlFor="repeat-from">
+                        {t('recurring.repeatFrom')}
+                        <span className="text-destructive ml-1">*</span>
+                      </Label>
+                      <Input
+                        id="repeat-from"
+                        type="date"
+                        value={repeatFrom}
+                        onChange={(e) => setRepeatFrom(e.target.value)}
+                        data-testid="event-repeat-from-input"
+                      />
+                    </div>
+
+                    {/* Repeat Until */}
+                    <div className="space-y-2">
+                      <Label htmlFor="repeat-until">
+                        {t('recurring.repeatUntil')}
+                        <span className="text-destructive ml-1">*</span>
+                      </Label>
+                      <Input
+                        id="repeat-until"
+                        type="date"
+                        value={repeatUntil}
+                        onChange={(e) => setRepeatUntil(e.target.value)}
+                        min={repeatFrom}
+                        data-testid="event-repeat-until-input"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose} disabled={isPending}>{t('actions.cancel')}</Button>
             <Button type="submit" disabled={isPending} data-testid="event-submit-btn">{isPending ? t('common.loading') : (isEditMode ? t('common.save') : t('actions.create'))}</Button>
@@ -568,6 +856,34 @@ export function EventFormModal({ open, onOpenChange, initialData, editingEvent, 
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+
+    {/* Past Event Confirmation Dialog */}
+    <AlertDialog open={showPastEventDialog} onOpenChange={setShowPastEventDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t('pastEventConfirmation.title')}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {t('pastEventConfirmation.message')}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={handleCancelPastEvent}>{t('pastEventConfirmation.cancel')}</AlertDialogCancel>
+          <Button onClick={handleConfirmPastEvent} disabled={isPending}>
+            {isPending ? t('common.loading') : t('pastEventConfirmation.confirm')}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    {/* Recurring Preview Dialog */}
+    <RecurringPreviewDialog
+      open={showRecurringPreviewDialog}
+      onOpenChange={setShowRecurringPreviewDialog}
+      dates={recurringPreviewDates}
+      onConfirm={handleRecurringConfirm}
+      onCancel={handleRecurringCancel}
+      isPending={createRecurringMutation.isPending}
+    />
   </>
   )
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { clientsApi, clientKeys, type StaffClient, type CreateClientRequest } from '@/api/clients'
+import { clientsApi, clientKeys, type StaffClient, type CreateClientRequest, type ClientListParams } from '@/api/clients'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,32 +9,51 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { UserPlus, Search, Pencil } from 'lucide-react'
+import { UserPlus, Search, Pencil, ArrowUpDown } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
 import { hu } from 'date-fns/locale'
 import { StaffClientEditModal } from '@/components/staff/StaffClientEditModal'
+
+type SortField = 'name' | 'email' | 'created_at'
+type SortDir = 'asc' | 'desc'
 
 export default function StaffClientsPage() {
   const { t } = useTranslation(['staff', 'common'])
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
+  const [sortBy, setSortBy] = useState<SortField>('name')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [selectedClient, setSelectedClient] = useState<StaffClient | null>(null)
   const [newClient, setNewClient] = useState<CreateClientRequest>({ name: '', email: '', phone: '' })
 
+  // Build query params
+  const queryParams: ClientListParams = {
+    search: search || undefined,
+    sort_by: sortBy,
+    sort_dir: sortDir,
+  }
+
   // Fetch clients
   const { data: clientsData, isLoading } = useQuery({
-    queryKey: clientKeys.list({ search: search || undefined }),
-    queryFn: () => clientsApi.list({ search: search || undefined }),
+    queryKey: clientKeys.list(queryParams),
+    queryFn: () => clientsApi.list(queryParams),
   })
 
   const clients = clientsData?.data || []
@@ -80,28 +99,53 @@ export default function StaffClientsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Vendégek</h1>
-          <p className="text-gray-500 mt-2">Vendégek listázása és hozzáadása</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Vendégek</h1>
+          <p className="text-gray-500 mt-1 sm:mt-2 text-sm sm:text-base">Vendégek listázása és hozzáadása</p>
         </div>
-        <Button onClick={() => setCreateModalOpen(true)}>
+        <Button onClick={() => setCreateModalOpen(true)} className="w-full sm:w-auto">
           <UserPlus className="h-4 w-4 mr-2" />
           Új vendég
         </Button>
       </div>
 
-      {/* Search */}
+      {/* Search and Sort */}
       <Card>
         <CardContent className="pt-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Keresés név, email vagy telefonszám alapján..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Keresés név, email vagy telefonszám alapján..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            {/* Sort controls */}
+            <div className="flex gap-2">
+              <Select value={sortBy} onValueChange={(value: SortField) => setSortBy(value)}>
+                <SelectTrigger className="w-[140px]">
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Név</SelectItem>
+                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="created_at">Dátum</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSortDir(sortDir === 'asc' ? 'desc' : 'asc')}
+                title={sortDir === 'asc' ? 'Növekvő sorrend' : 'Csökkenő sorrend'}
+              >
+                {sortDir === 'asc' ? '↑' : '↓'}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -123,24 +167,27 @@ export default function StaffClientsPage() {
               {clients.map((client: StaffClient) => (
                 <div
                   key={client.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors gap-3"
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-1">
-                      <h3 className="font-medium">{client.name}</h3>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <h3 className="font-medium truncate">{client.name}</h3>
                       <Badge variant={getStatusBadgeVariant(client.status)}>
                         {client.status === 'active' ? 'Aktív' : 'Inaktív'}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      {client.email && <span>{client.email}</span>}
-                      {client.phone && <span>· {client.phone}</span>}
-                      <span>· {format(new Date(client.created_at), 'yyyy. MM. dd.', { locale: hu })}</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 text-sm text-gray-500 gap-1">
+                      {client.email && <span className="truncate">{client.email}</span>}
+                      {client.phone && <span className="hidden sm:inline">·</span>}
+                      {client.phone && <span>{client.phone}</span>}
+                      <span className="hidden sm:inline">·</span>
+                      <span className="text-xs sm:text-sm">{format(new Date(client.created_at), 'yyyy. MM. dd.', { locale: hu })}</span>
                     </div>
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
+                    className="w-full sm:w-auto shrink-0"
                     onClick={() => {
                       setSelectedClient(client)
                       setEditModalOpen(true)

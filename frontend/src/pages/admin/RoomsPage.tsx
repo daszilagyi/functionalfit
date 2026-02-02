@@ -131,9 +131,9 @@ export default function RoomsPage() {
     editForm.reset({
       site_id: room.site_id,
       name: room.name,
-      capacity: room.capacity,
-      google_calendar_id: room.google_calendar_id,
-      color: room.color,
+      capacity: room.capacity ?? undefined,
+      google_calendar_id: room.google_calendar_id ?? undefined,
+      color: room.color ?? undefined,
     })
     setEditDialogOpen(true)
   }

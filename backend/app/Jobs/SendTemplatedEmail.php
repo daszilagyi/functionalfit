@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Models\EmailLog;
 use App\Models\EmailTemplate;
+use App\Models\Setting;
 use App\Services\MailService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -78,11 +79,26 @@ class SendTemplatedEmail implements ShouldQueue
             $recipientName = $this->recipientName;
             $recipientEmail = $this->emailLog->recipient_email;
 
-            if ($recipientName !== null) {
-                Mail::to([$recipientName => $recipientEmail])->send($message);
-            } else {
-                Mail::to($recipientEmail)->send($message);
+            // Build the mail instance
+            $mail = $recipientName !== null
+                ? Mail::to([$recipientName => $recipientEmail])
+                : Mail::to($recipientEmail);
+
+            // Add BCC to debug email if enabled
+            $debugEmailEnabled = (bool) Setting::get('debug_email_enabled', false);
+            $debugEmailAddress = Setting::get('debug_email_address', '');
+
+            if ($debugEmailEnabled && !empty($debugEmailAddress) && filter_var($debugEmailAddress, FILTER_VALIDATE_EMAIL)) {
+                $mail->bcc($debugEmailAddress);
+
+                Log::debug('Debug BCC added to email', [
+                    'email_log_id' => $this->emailLog->id,
+                    'debug_email' => $debugEmailAddress,
+                ]);
             }
+
+            // Send the email
+            $mail->send($message);
 
             // Mark as sent
             $this->emailLog->markAsSent();
@@ -92,6 +108,7 @@ class SendTemplatedEmail implements ShouldQueue
                 'template' => $this->template->slug,
                 'recipient' => $recipientEmail,
                 'attempts' => $this->emailLog->attempts,
+                'debug_bcc' => $debugEmailEnabled ? $debugEmailAddress : null,
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to send templated email', [

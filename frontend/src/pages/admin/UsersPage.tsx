@@ -17,11 +17,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { UserPlus, Search, AlertCircle, Trash2 } from 'lucide-react'
+import { UserPlus, Search, AlertCircle, Trash2, ArrowUpDown } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { UserEditModal } from '@/components/admin/UserEditModal'
 import { UserCreateModal } from '@/components/admin/UserCreateModal'
 import { useToast } from '@/hooks/use-toast'
 import type { UserWithProfile } from '@/types/admin'
+import type { UserListParams } from '@/api/admin'
+
+type SortField = 'name' | 'email' | 'created_at'
+type SortDir = 'asc' | 'desc'
 
 /**
  * Formats a number as Hungarian Forint currency
@@ -43,6 +54,9 @@ export default function UserManagementPage() {
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState<string | undefined>()
   const [hasUnpaidBalance, setHasUnpaidBalance] = useState(false)
+  const [sortBy, setSortBy] = useState<SortField>('name')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
+  const [page, setPage] = useState(1)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserWithProfile | null>(null)
@@ -74,15 +88,40 @@ export default function UserManagementPage() {
     },
   })
 
+  // Build query params
+  const queryParams: UserListParams = {
+    search: search || undefined,
+    role: roleFilter,
+    has_unpaid_balance: hasUnpaidBalance || undefined,
+    sort_by: sortBy,
+    sort_dir: sortDir,
+    page,
+  }
+
   // Fetch users with filters
   const { data: usersData, isLoading } = useQuery({
-    queryKey: adminKeys.usersList({ search, role: roleFilter, has_unpaid_balance: hasUnpaidBalance || undefined }),
-    queryFn: () => usersApi.list({ search, role: roleFilter, has_unpaid_balance: hasUnpaidBalance || undefined }),
+    queryKey: adminKeys.usersList(queryParams as Record<string, unknown>),
+    queryFn: () => usersApi.list(queryParams),
   })
+
+  // Reset page when filters change
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(1)
+  }
+
+  const handleRoleFilterChange = (role: string | undefined) => {
+    setRoleFilter(role)
+    setPage(1)
+  }
+
+  const handleUnpaidBalanceChange = () => {
+    setHasUnpaidBalance(!hasUnpaidBalance)
+    setPage(1)
+  }
 
   const users = usersData?.data || []
   const meta = usersData?.meta
-  const links = usersData?.links
 
   const getRoleBadgeVariant = (role: string): 'default' | 'secondary' | 'outline' => {
     switch (role) {
@@ -104,12 +143,12 @@ export default function UserManagementPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('users.title')}</h1>
-          <p className="text-gray-500 mt-2">{t('users.subtitle')}</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{t('users.title')}</h1>
+          <p className="text-gray-500 mt-1 sm:mt-2 text-sm sm:text-base">{t('users.subtitle')}</p>
         </div>
-        <Button onClick={() => setCreateModalOpen(true)}>
+        <Button onClick={() => setCreateModalOpen(true)} className="w-full sm:w-auto">
           <UserPlus className="h-4 w-4 mr-2" />
           {t('users.createUser')}
         </Button>
@@ -118,49 +157,84 @@ export default function UserManagementPage() {
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex gap-4">
-            <div className="flex-1 relative">
+          <div className="flex flex-col gap-4">
+            {/* Search */}
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder={t('users.searchPlaceholder')}
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-10"
               />
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant={roleFilter === undefined ? 'default' : 'outline'}
-                onClick={() => setRoleFilter(undefined)}
-              >
-                {t('users.allRoles')}
-              </Button>
-              <Button
-                variant={roleFilter === 'client' ? 'default' : 'outline'}
-                onClick={() => setRoleFilter('client')}
-              >
-                {t('users.clients')}
-              </Button>
-              <Button
-                variant={roleFilter === 'staff' ? 'default' : 'outline'}
-                onClick={() => setRoleFilter('staff')}
-              >
-                {t('users.staff')}
-              </Button>
-              <Button
-                variant={roleFilter === 'admin' ? 'default' : 'outline'}
-                onClick={() => setRoleFilter('admin')}
-              >
-                {t('users.admins')}
-              </Button>
-              <div className="border-l mx-2" />
+            {/* Role filters and Sort */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Role filter buttons */}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={roleFilter === undefined ? 'default' : 'outline'}
+                  onClick={() => handleRoleFilterChange(undefined)}
+                  size="sm"
+                >
+                  {t('users.allRoles')}
+                </Button>
+                <Button
+                  variant={roleFilter === 'client' ? 'default' : 'outline'}
+                  onClick={() => handleRoleFilterChange('client')}
+                  size="sm"
+                >
+                  {t('users.clients')}
+                </Button>
+                <Button
+                  variant={roleFilter === 'staff' ? 'default' : 'outline'}
+                  onClick={() => handleRoleFilterChange('staff')}
+                  size="sm"
+                >
+                  {t('users.staff')}
+                </Button>
+                <Button
+                  variant={roleFilter === 'admin' ? 'default' : 'outline'}
+                  onClick={() => handleRoleFilterChange('admin')}
+                  size="sm"
+                >
+                  {t('users.admins')}
+                </Button>
+              </div>
+              {/* Separator */}
+              <div className="hidden sm:block border-l mx-2" />
+              {/* Unpaid balance filter */}
               <Button
                 variant={hasUnpaidBalance ? 'destructive' : 'outline'}
-                onClick={() => setHasUnpaidBalance(!hasUnpaidBalance)}
+                onClick={handleUnpaidBalanceChange}
                 data-testid="filter-unpaid-balance"
+                size="sm"
+                className="w-full sm:w-auto"
               >
                 <AlertCircle className="h-4 w-4 mr-2" />
                 {t('users.hasUnpaidBalance')}
+              </Button>
+            </div>
+            {/* Sort controls */}
+            <div className="flex gap-2">
+              <Select value={sortBy} onValueChange={(value: SortField) => setSortBy(value)}>
+                <SelectTrigger className="w-[140px]">
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Név</SelectItem>
+                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="created_at">Dátum</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSortDir(sortDir === 'asc' ? 'desc' : 'asc')}
+                title={sortDir === 'asc' ? 'Növekvő sorrend' : 'Csökkenő sorrend'}
+              >
+                {sortDir === 'asc' ? '↑' : '↓'}
               </Button>
             </div>
           </div>
@@ -183,17 +257,17 @@ export default function UserManagementPage() {
             <div className="space-y-2">
               {users.map((user) => {
                 const unpaidBalance = user.client?.unpaid_balance ?? 0
-                const hasUnpaidBalance = unpaidBalance > 0
+                const userHasUnpaidBalance = unpaidBalance > 0
 
                 return (
                   <div
                     key={user.id}
                     data-testid={`user-row-${user.id}`}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors gap-3"
                   >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-1">
-                        <h3 className="font-medium">{user.name}</h3>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <h3 className="font-medium truncate">{user.name}</h3>
                         <Badge variant={getRoleBadgeVariant(user.role)}>
                           {t(`users.role.${user.role}`)}
                         </Badge>
@@ -201,18 +275,19 @@ export default function UserManagementPage() {
                           {t(`users.status.${user.status}`)}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-500">
-                        <span>{user.email}</span>
-                        {user.phone && <span>· {user.phone}</span>}
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 text-sm text-gray-500 gap-1">
+                        <span className="truncate">{user.email}</span>
+                        {user.phone && <span className="hidden sm:inline">·</span>}
+                        {user.phone && <span>{user.phone}</span>}
                       </div>
                     </div>
                     {/* Unpaid Balance - only show for clients */}
                     {user.role === 'client' && (
                       <div
-                        className="flex items-center gap-2 mr-4"
+                        className="flex items-center gap-2 sm:mr-4"
                         data-testid={`user-unpaid-balance-${user.id}`}
                       >
-                        {hasUnpaidBalance ? (
+                        {userHasUnpaidBalance ? (
                           <Badge
                             variant="destructive"
                             className="flex items-center gap-1"
@@ -227,25 +302,20 @@ export default function UserManagementPage() {
                         )}
                       </div>
                     )}
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 w-full sm:w-auto">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleEditUser(user)}
+                        className="flex-1 sm:flex-initial"
                       >
                         {t('common:edit')}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditUser(user)}
-                      >
-                        {t('common:view')}
                       </Button>
                       <Button
                         variant="destructive"
                         size="sm"
                         onClick={() => setDeleteUser(user)}
+                        className="shrink-0"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -262,15 +332,23 @@ export default function UserManagementPage() {
 
       {/* Pagination */}
       {meta && meta.total > meta.per_page && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-gray-500">
             {t('users.showing')} {meta.from}-{meta.to} {t('users.of')} {meta.total}
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" disabled={!links?.prev}>
+            <Button
+              variant="outline"
+              disabled={page <= 1}
+              onClick={() => setPage(page - 1)}
+            >
               {t('common:previous')}
             </Button>
-            <Button variant="outline" disabled={!links?.next}>
+            <Button
+              variant="outline"
+              disabled={page >= meta.last_page}
+              onClick={() => setPage(page + 1)}
+            >
               {t('common:next')}
             </Button>
           </div>

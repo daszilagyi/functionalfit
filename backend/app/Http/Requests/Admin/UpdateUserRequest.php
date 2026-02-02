@@ -38,6 +38,7 @@ class UpdateUserRequest extends FormRequest
             'bio' => ['nullable', 'string', 'max:1000'],
             'default_hourly_rate' => ['nullable', 'numeric', 'min:0'],
             'is_available_for_booking' => ['nullable', 'boolean'],
+            'daily_schedule_notification' => ['nullable', 'boolean'],
         ];
     }
 

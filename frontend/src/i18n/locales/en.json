@@ -34,6 +34,14 @@
     "staff": "Staff",
     "admin": "Administrator"
   },
+  "calendar": {
+    "pastEventConfirmation": {
+      "title": "Past Event",
+      "message": "The event you want to record is earlier than the current date. Are you sure you want to record the event in the past?",
+      "confirm": "Yes, save to past",
+      "cancel": "Cancel"
+    }
+  },
   "errors": {
     "invalidClient": "Invalid client",
     "invalidDateTime": "Invalid date or time",

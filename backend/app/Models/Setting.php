@@ -12,6 +12,26 @@ class Setting extends Model
 {
     use HasFactory;
 
+    /**
+     * The primary key for the model.
+     */
+    protected $primaryKey = 'key';
+
+    /**
+     * The "type" of the primary key.
+     */
+    protected $keyType = 'string';
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     */
+    public $incrementing = false;
+
+    /**
+     * Disable created_at timestamp (table only has updated_at)
+     */
+    public const CREATED_AT = null;
+
     protected $fillable = [
         'key',
         'value',
@@ -21,7 +41,6 @@ class Setting extends Model
     {
         return [
             'value' => 'array',
-            'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
     }

@@ -38,6 +38,14 @@ class ClassRegistration extends Model
         return $this->belongsTo(ClassOccurrence::class, 'occurrence_id');
     }
 
+    /**
+     * Alias for occurrence relationship (used by SendDailyReminders command)
+     */
+    public function classOccurrence(): BelongsTo
+    {
+        return $this->belongsTo(ClassOccurrence::class, 'occurrence_id');
+    }
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);

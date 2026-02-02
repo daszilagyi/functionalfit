@@ -5,7 +5,7 @@ Hello {{ $client->user->name }},
 
 Your personal training session **{{ $event->title }}** scheduled for {{ $event->starts_at->format('l, F j, Y') }} at {{ $event->starts_at->format('H:i') }} has been cancelled.
 
-<x-mail::button :url="config('app.frontend_url') . '/events'>
+<x-mail::button :url="config('app.frontend_url') . '/events'">
 View Your Schedule
 </x-mail::button>
 

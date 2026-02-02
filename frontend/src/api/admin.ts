@@ -62,11 +62,23 @@ export const adminKeys = {
   calendarChanges: () => [...adminKeys.all, 'calendarChanges'] as const,
   calendarChangesList: (filters?: CalendarChangeFilters) => [...adminKeys.calendarChanges(), 'list', filters] as const,
   calendarChangeDetail: (id: number) => [...adminKeys.calendarChanges(), id] as const,
+  settings: () => [...adminKeys.all, 'settings'] as const,
+  notificationSettings: () => [...adminKeys.settings(), 'notifications'] as const,
+}
+
+export interface UserListParams {
+  role?: string
+  status?: string
+  search?: string
+  has_unpaid_balance?: boolean
+  sort_by?: 'name' | 'email' | 'created_at'
+  sort_dir?: 'asc' | 'desc'
+  page?: number
 }
 
 // User Management API
 export const usersApi = {
-  list: async (params?: { role?: string; status?: string; search?: string; has_unpaid_balance?: boolean }) => {
+  list: async (params?: UserListParams): Promise<PaginatedResponse<UserWithProfile>> => {
     const { data } = await apiClient.get<{ data: PaginatedResponse<UserWithProfile> }>('/admin/users', { params })
     return data.data
   },
@@ -283,6 +295,44 @@ export const emailTemplatesApi = {
 export const eventChangesApi = {
   list: async (params?: { staff_id?: number; action?: string; date_from?: string; date_to?: string; per_page?: number }) => {
     const { data } = await apiClient.get<{ data: PaginatedResponse<EventChange> }>('/admin/event-changes', { params })
+    return data.data
+  },
+}
+
+// Admin Settings API
+export interface NotificationSettings {
+  daily_schedule_notification_hour: number
+  debug_email_enabled: boolean
+  debug_email_address: string
+  email_company_name: string
+  email_support_email: string
+}
+
+export interface UpdateNotificationSettingsRequest {
+  daily_schedule_notification_hour?: number
+  debug_email_enabled?: boolean
+  debug_email_address?: string | null
+  email_company_name?: string
+  email_support_email?: string
+}
+
+export interface SendDailySchedulesResponse {
+  output: string
+}
+
+export const adminSettingsApi = {
+  getNotificationSettings: async (): Promise<NotificationSettings> => {
+    const { data } = await apiClient.get<{ data: NotificationSettings }>('/admin/settings/notifications')
+    return data.data
+  },
+
+  updateNotificationSettings: async (settings: UpdateNotificationSettingsRequest): Promise<NotificationSettings> => {
+    const { data } = await apiClient.put<{ data: NotificationSettings }>('/admin/settings/notifications', settings)
+    return data.data
+  },
+
+  sendDailySchedules: async (): Promise<SendDailySchedulesResponse> => {
+    const { data } = await apiClient.post<{ data: SendDailySchedulesResponse }>('/admin/settings/notifications/send-daily-schedules')
     return data.data
   },
 }

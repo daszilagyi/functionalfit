@@ -33,6 +33,7 @@ export interface StaffProfile {
   bio?: string
   default_hourly_rate?: number
   is_available_for_booking: boolean
+  daily_schedule_notification: boolean
   created_at: string
   updated_at: string
 }
@@ -71,6 +72,7 @@ export interface UpdateUserRequest {
   bio?: string
   default_hourly_rate?: number
   is_available_for_booking?: boolean
+  daily_schedule_notification?: boolean
 }
 
 // Site Management Types

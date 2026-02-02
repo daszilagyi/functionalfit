@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Edit, Trash2, Eye, Send, History } from 'lucide-react'
+import { Edit, Trash2, Eye, Send, History, Users, UserCog } from 'lucide-react'
 import { format } from 'date-fns'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -26,6 +26,21 @@ import {
   type UpdateEmailTemplateFormData,
   type SendTestEmailFormData
 } from '@/lib/validations/admin'
+
+// Helper function to determine template audience based on slug
+const getTemplateAudience = (slug: string): 'client' | 'staff' | 'both' => {
+  // Staff templates
+  if (slug.startsWith('daily-schedule') || slug.startsWith('staff-') || slug.includes('trainer')) {
+    return 'staff'
+  }
+  // Client templates
+  if (slug.startsWith('reminder-') || slug.startsWith('booking-') || slug.startsWith('pass-') ||
+      slug.startsWith('registration') || slug.startsWith('welcome') || slug.includes('client')) {
+    return 'client'
+  }
+  // Default to both
+  return 'both'
+}
 
 export default function EmailTemplatesPage() {
   const { t } = useTranslation('admin')
@@ -328,6 +343,7 @@ export default function EmailTemplatesPage() {
                 <TableRow>
                   <TableHead>{t('emailTemplates.slug')}</TableHead>
                   <TableHead>{t('emailTemplates.subject')}</TableHead>
+                  <TableHead>{t('emailTemplates.audience', 'Célközönség')}</TableHead>
                   <TableHead>{t('emailTemplates.isActive')}</TableHead>
                   <TableHead>{t('emailTemplates.version')}</TableHead>
                   <TableHead>{t('emailTemplates.updatedAt')}</TableHead>
@@ -339,6 +355,32 @@ export default function EmailTemplatesPage() {
                   <TableRow key={template.id} data-testid={`email-template-row-${template.id}`}>
                     <TableCell className="font-mono text-sm">{template.slug}</TableCell>
                     <TableCell>{template.subject}</TableCell>
+                    <TableCell>
+                      {(() => {
+                        const audience = getTemplateAudience(template.slug)
+                        if (audience === 'staff') {
+                          return (
+                            <Badge variant="secondary" className="gap-1">
+                              <UserCog className="h-3 w-3" />
+                              {t('emailTemplates.audienceStaff', 'Dolgozók')}
+                            </Badge>
+                          )
+                        }
+                        if (audience === 'client') {
+                          return (
+                            <Badge variant="outline" className="gap-1">
+                              <Users className="h-3 w-3" />
+                              {t('emailTemplates.audienceClient', 'Ügyfelek')}
+                            </Badge>
+                          )
+                        }
+                        return (
+                          <Badge variant="default" className="gap-1">
+                            {t('emailTemplates.audienceBoth', 'Mindkettő')}
+                          </Badge>
+                        )
+                      })()}
+                    </TableCell>
                     <TableCell>
                       <Switch
                         checked={template.is_active}

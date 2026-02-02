@@ -158,7 +158,9 @@
     "deleted": "Event deleted successfully",
     "movedSameDay": "Event moved",
     "checkedIn": "Check-in recorded successfully",
-    "passCreditDeducted": "Pass credit deducted"
+    "passCreditDeducted": "Pass credit deducted",
+    "recurringCreated": "{{count}} events created",
+    "recurringCreatedWithSkips": "{{count}} events created, {{skipped}} skipped"
   },
   "errors": {
     "loadFailed": "Failed to load calendar",
@@ -222,6 +224,36 @@
     "message": "This event conflicts with another booking in this room. Are you sure you want to proceed?",
     "minutesOverlap": "minutes overlap",
     "continueAnyway": "Continue Anyway"
+  },
+  "pastEventConfirmation": {
+    "title": "Past Event",
+    "message": "The event you want to record is earlier than the current date. Are you sure you want to record the event in the past?",
+    "confirm": "Yes, save to past",
+    "cancel": "Cancel"
+  },
+  "recurring": {
+    "label": "Recurring event (weekly)",
+    "description": "The event will be created every week on the same day and time.",
+    "repeatFrom": "Interval start",
+    "repeatUntil": "Interval end",
+    "validation": {
+      "intervalRequired": "Both dates are required",
+      "maxIntervalExceeded": "The interval cannot exceed 1 year"
+    },
+    "preview": {
+      "title": "Recurring Events Preview",
+      "description": "Events will be created on the following dates. Check the ones to skip.",
+      "date": "Date",
+      "status": "Status",
+      "conflictWith": "Conflicts with",
+      "skip": "Skip",
+      "ok": "Available",
+      "conflict": "Conflict",
+      "noConflicts": "No conflicts, all dates are available.",
+      "allConflicts": "All dates have conflicts! No events can be created.",
+      "confirm": "Create",
+      "confirmWithSkips": "Create ({{count}} events)"
+    }
   },
   "participants": {
     "title": "Participants",

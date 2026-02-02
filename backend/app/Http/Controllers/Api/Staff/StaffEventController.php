@@ -105,7 +105,7 @@ class StaffEventController extends Controller
     }
 
     /**
-     * Create a new 1:1 event
+     * Create a new 1:1 event (or batch create for recurring events)
      *
      * POST /api/staff/events
      */
@@ -117,6 +117,20 @@ class StaffEventController extends Controller
             return ApiResponse::error('Only staff can create events', null, 403);
         }
 
+        // Handle recurring events
+        if ($request->boolean('is_recurring')) {
+            return $this->storeRecurring($request, $staff);
+        }
+
+        // Single event creation
+        return $this->storeSingle($request, $staff);
+    }
+
+    /**
+     * Create a single event
+     */
+    private function storeSingle(StoreEventRequest $request, $staff): JsonResponse
+    {
         try {
             return DB::transaction(function () use ($request, $staff) {
                 // Check for conflicts
@@ -174,6 +188,215 @@ class StaffEventController extends Controller
         } catch (ConflictException $e) {
             return ApiResponse::conflict($e->getMessage(), $e->getDetails());
         }
+    }
+
+    /**
+     * Create recurring events (batch creation)
+     */
+    private function storeRecurring(StoreEventRequest $request, $staff): JsonResponse
+    {
+        $repeatFrom = \Carbon\Carbon::parse($request->input('repeat_from'));
+        $repeatUntil = \Carbon\Carbon::parse($request->input('repeat_until'));
+        $startsAt = \Carbon\Carbon::parse($request->input('starts_at'));
+        $endsAt = \Carbon\Carbon::parse($request->input('ends_at'));
+        $roomId = $request->integer('room_id');
+        $skipDates = $request->input('skip_dates', []);
+
+        // Calculate the duration of the event
+        $durationMinutes = $startsAt->diffInMinutes($endsAt);
+
+        // Get the day of the week from starts_at
+        $dayOfWeek = $startsAt->dayOfWeek;
+        $timeOfDay = $startsAt->format('H:i:s');
+
+        // Prepare base event data
+        $baseEventData = [
+            'type' => $request->input('type', 'INDIVIDUAL'),
+            'staff_id' => $staff->id,
+            'client_id' => $request->input('client_id'),
+            'room_id' => $roomId,
+            'notes' => $request->input('notes'),
+            'status' => 'scheduled',
+            'created_by' => $request->user()->id,
+        ];
+
+        // For INDIVIDUAL events, set service_type_id and resolve main client pricing
+        $serviceTypeId = null;
+        if ($request->input('type') === 'INDIVIDUAL' && $request->filled('service_type_id')) {
+            $serviceTypeId = $request->integer('service_type_id');
+            $baseEventData['service_type_id'] = $serviceTypeId;
+
+            // Resolve pricing for main client
+            if ($request->filled('client_id') && $request->integer('client_id') > 0) {
+                $mainClientPricing = $this->pricingService->resolvePricingForClient(
+                    $request->integer('client_id'),
+                    $serviceTypeId
+                );
+                $baseEventData = array_merge($baseEventData, $mainClientPricing);
+            }
+        }
+
+        $additionalClientIds = $request->input('additional_client_ids', []);
+        $createdEvents = [];
+        $skippedDates = [];
+
+        try {
+            return DB::transaction(function () use (
+                $repeatFrom, $repeatUntil, $dayOfWeek, $timeOfDay, $durationMinutes,
+                $roomId, $skipDates, $baseEventData, $serviceTypeId, $additionalClientIds,
+                $staff, &$createdEvents, &$skippedDates
+            ) {
+                // Find the first occurrence of the correct day of week
+                $current = $repeatFrom->copy();
+                while ($current->dayOfWeek !== $dayOfWeek) {
+                    $current->addDay();
+                }
+
+                // Iterate through all weekly occurrences
+                while ($current->lte($repeatUntil)) {
+                    $dateString = $current->format('Y-m-d');
+
+                    // Skip if date is in skip_dates
+                    if (in_array($dateString, $skipDates)) {
+                        $skippedDates[] = $dateString;
+                        $current->addWeek();
+                        continue;
+                    }
+
+                    $eventStartsAt = $current->copy()->setTimeFromTimeString($timeOfDay);
+                    $eventEndsAt = $eventStartsAt->copy()->addMinutes($durationMinutes);
+
+                    // Check for conflicts (skip if conflict)
+                    $conflicts = $this->conflictService->detectConflicts(
+                        roomId: $roomId,
+                        startsAt: $eventStartsAt,
+                        endsAt: $eventEndsAt
+                    );
+
+                    if (!empty($conflicts)) {
+                        $skippedDates[] = $dateString;
+                        $current->addWeek();
+                        continue;
+                    }
+
+                    // Create the event
+                    $eventData = array_merge($baseEventData, [
+                        'starts_at' => $eventStartsAt,
+                        'ends_at' => $eventEndsAt,
+                    ]);
+
+                    $event = Event::create($eventData);
+
+                    // Attach additional clients with pricing if provided
+                    if (is_array($additionalClientIds) && !empty($additionalClientIds)) {
+                        $this->attachAdditionalClientsWithPricing(
+                            $event,
+                            $additionalClientIds,
+                            $serviceTypeId
+                        );
+                    }
+
+                    // Queue notification
+                    $this->notificationService->sendEventConfirmation($event);
+
+                    $createdEvents[] = $event->load(['client.user', 'additionalClients.user', 'room', 'serviceType']);
+                    $current->addWeek();
+                }
+
+                if (empty($createdEvents)) {
+                    return ApiResponse::error('All dates have conflicts or were skipped. No events created.', null, 422);
+                }
+
+                $message = count($createdEvents) . ' event(s) created';
+                if (!empty($skippedDates)) {
+                    $message .= ', ' . count($skippedDates) . ' date(s) skipped';
+                }
+
+                return ApiResponse::created([
+                    'count' => count($createdEvents),
+                    'events' => $createdEvents,
+                    'skipped_dates' => $skippedDates,
+                ], $message);
+            });
+        } catch (ConflictException $e) {
+            return ApiResponse::conflict($e->getMessage(), $e->getDetails());
+        }
+    }
+
+    /**
+     * Preview recurring events (check for conflicts without creating)
+     *
+     * POST /api/staff/events/preview-recurring
+     */
+    public function previewRecurring(StoreEventRequest $request): JsonResponse
+    {
+        $staff = $request->user()->staffProfile;
+
+        if (!$staff) {
+            return ApiResponse::error('Only staff can preview events', null, 403);
+        }
+
+        $repeatFrom = \Carbon\Carbon::parse($request->input('repeat_from'));
+        $repeatUntil = \Carbon\Carbon::parse($request->input('repeat_until'));
+        $startsAt = \Carbon\Carbon::parse($request->input('starts_at'));
+        $endsAt = \Carbon\Carbon::parse($request->input('ends_at'));
+        $roomId = $request->integer('room_id');
+
+        // Calculate the duration of the event
+        $durationMinutes = $startsAt->diffInMinutes($endsAt);
+
+        // Get the day of the week from starts_at
+        $dayOfWeek = $startsAt->dayOfWeek;
+        $timeOfDay = $startsAt->format('H:i:s');
+
+        // Generate all dates in the interval
+        $dates = [];
+        $current = $repeatFrom->copy();
+
+        // Find the first occurrence of the correct day of week
+        while ($current->dayOfWeek !== $dayOfWeek) {
+            $current->addDay();
+        }
+
+        // Generate all weekly occurrences
+        while ($current->lte($repeatUntil)) {
+            $eventStartsAt = $current->copy()->setTimeFromTimeString($timeOfDay);
+            $eventEndsAt = $eventStartsAt->copy()->addMinutes($durationMinutes);
+
+            // Check for conflicts
+            $conflicts = $this->conflictService->detectConflicts(
+                roomId: $roomId,
+                startsAt: $eventStartsAt,
+                endsAt: $eventEndsAt
+            );
+
+            $dateEntry = [
+                'date' => $current->format('Y-m-d'),
+                'starts_at' => $eventStartsAt->toIso8601String(),
+                'ends_at' => $eventEndsAt->toIso8601String(),
+                'status' => empty($conflicts) ? 'ok' : 'conflict',
+            ];
+
+            if (!empty($conflicts)) {
+                // Get the first conflict's description
+                $firstConflict = $conflicts[0];
+                $conflictTime = \Carbon\Carbon::parse($firstConflict['starts_at'])->format('H:i');
+                $dateEntry['conflict_with'] = ($firstConflict['client_name'] ?? 'Foglalás') . ' - ' . $conflictTime;
+            }
+
+            $dates[] = $dateEntry;
+            $current->addWeek();
+        }
+
+        $okCount = count(array_filter($dates, fn($d) => $d['status'] === 'ok'));
+        $conflictCount = count(array_filter($dates, fn($d) => $d['status'] === 'conflict'));
+
+        return ApiResponse::success([
+            'dates' => $dates,
+            'total' => count($dates),
+            'ok_count' => $okCount,
+            'conflict_count' => $conflictCount,
+        ]);
     }
 
     /**
@@ -382,5 +605,84 @@ class StaffEventController extends Controller
 
             return ApiResponse::noContent();
         });
+    }
+
+    /**
+     * Get dashboard stats for staff member
+     *
+     * GET /api/staff/dashboard
+     */
+    public function dashboard(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $staff = $user->staffProfile;
+
+        // Allow admin to access, otherwise require staff profile
+        if (!$staff && $user->role !== 'admin') {
+            return ApiResponse::error('Only staff can access this endpoint', null, 403);
+        }
+
+        // If admin with no staff profile, return zeros
+        if (!$staff) {
+            return ApiResponse::success([
+                'today_sessions' => 0,
+                'today_completed' => 0,
+                'today_remaining' => 0,
+                'week_total_hours' => 0,
+                'upcoming_session' => null,
+            ]);
+        }
+
+        $today = now()->startOfDay();
+        $todayEnd = now()->endOfDay();
+        $weekStart = now()->startOfWeek();
+        $weekEnd = now()->endOfWeek();
+
+        // Today's sessions
+        $todayEvents = Event::where('staff_id', $staff->id)
+            ->whereBetween('starts_at', [$today, $todayEnd])
+            ->get();
+
+        $todaySessions = $todayEvents->count();
+        $todayCompleted = $todayEvents->where('attendance_status', 'attended')->count();
+        $todayRemaining = $todayEvents->where('attendance_status', '!=', 'attended')
+            ->where('starts_at', '>', now())
+            ->count();
+
+        // Week total hours
+        $weekEvents = Event::where('staff_id', $staff->id)
+            ->whereBetween('starts_at', [$weekStart, $weekEnd])
+            ->get();
+
+        $weekTotalHours = $weekEvents->sum(function ($event) {
+            return $event->starts_at->diffInMinutes($event->ends_at) / 60.0;
+        });
+
+        // Upcoming session (next event from now)
+        $upcomingEvent = Event::with(['client.user', 'room'])
+            ->where('staff_id', $staff->id)
+            ->where('starts_at', '>', now())
+            ->orderBy('starts_at')
+            ->first();
+
+        $upcomingSession = null;
+        if ($upcomingEvent) {
+            $upcomingSession = [
+                'id' => $upcomingEvent->id,
+                'client_name' => $upcomingEvent->client?->user?->name,
+                'starts_at' => $upcomingEvent->starts_at->toIso8601String(),
+                'ends_at' => $upcomingEvent->ends_at->toIso8601String(),
+                'room_name' => $upcomingEvent->room?->name ?? 'N/A',
+                'duration_minutes' => $upcomingEvent->starts_at->diffInMinutes($upcomingEvent->ends_at),
+            ];
+        }
+
+        return ApiResponse::success([
+            'today_sessions' => $todaySessions,
+            'today_completed' => $todayCompleted,
+            'today_remaining' => $todayRemaining,
+            'week_total_hours' => round($weekTotalHours, 1),
+            'upcoming_session' => $upcomingSession,
+        ]);
     }
 }

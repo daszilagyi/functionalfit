@@ -257,6 +257,23 @@ class EmailTemplateController extends Controller
             'new' => [
                 'starts_at' => '2024-12-01 09:00',
             ],
+            // Daily schedule template variables
+            'date' => date('Y. F j.'),
+            'events_count' => 3,
+            'individual_count' => 2,
+            'group_count' => 1,
+            'events_table' => '<table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                <thead><tr style="background: #3b82f6; color: white;">
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Időpont</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Típus</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Vendég / Óra neve</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Terem</th>
+                </tr></thead><tbody>
+                <tr style="background: #f8fafc;"><td style="padding: 8px; border: 1px solid #ddd;">09:00 - 10:00</td><td style="padding: 8px; border: 1px solid #ddd;">Személyi</td><td style="padding: 8px; border: 1px solid #ddd;">Teszt Ügyfél 1</td><td style="padding: 8px; border: 1px solid #ddd;">Kis Terem</td></tr>
+                <tr style="background: #ffffff;"><td style="padding: 8px; border: 1px solid #ddd;">11:00 - 12:00</td><td style="padding: 8px; border: 1px solid #ddd;">Személyi</td><td style="padding: 8px; border: 1px solid #ddd;">Teszt Ügyfél 2</td><td style="padding: 8px; border: 1px solid #ddd;">Nagy Terem</td></tr>
+                <tr style="background: #f8fafc;"><td style="padding: 8px; border: 1px solid #ddd;">14:00 - 15:00</td><td style="padding: 8px; border: 1px solid #ddd;">Csoportos</td><td style="padding: 8px; border: 1px solid #ddd;">CrossFit (5 fő)</td><td style="padding: 8px; border: 1px solid #ddd;">Főterem</td></tr>
+                </tbody></table>',
+            'events_list' => "- 09:00 - 10:00 | Személyi | Teszt Ügyfél 1 | Kis Terem\n- 11:00 - 12:00 | Személyi | Teszt Ügyfél 2 | Nagy Terem\n- 14:00 - 15:00 | Csoportos | CrossFit (5 fő) | Főterem",
         ];
     }
 }

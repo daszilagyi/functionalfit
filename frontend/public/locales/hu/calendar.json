@@ -158,7 +158,9 @@
     "deleted": "Esemény sikeresen törölve",
     "movedSameDay": "Esemény áthelyezve",
     "checkedIn": "Bejelentkezés sikeresen rögzítve",
-    "passCreditDeducted": "Bérletkredit levonva"
+    "passCreditDeducted": "Bérletkredit levonva",
+    "recurringCreated": "{{count}} esemény létrehozva",
+    "recurringCreatedWithSkips": "{{count}} esemény létrehozva, {{skipped}} kihagyva"
   },
   "errors": {
     "loadFailed": "Nem sikerült betölteni a naptárat",
@@ -222,6 +224,36 @@
     "message": "Az esemény ütközik egy másik foglalással ebben a teremben. Biztosan módosítani szeretnéd?",
     "minutesOverlap": "perc átfedés",
     "continueAnyway": "Módosítás mégis"
+  },
+  "pastEventConfirmation": {
+    "title": "Múltbeli esemény",
+    "message": "Az általad rögzíteni kívánt esemény korábbi a mostani dátumnál. Biztosan a múltba szeretnéd rögzíteni az eseményt?",
+    "confirm": "Igen, mentés a múltba",
+    "cancel": "Mégse"
+  },
+  "recurring": {
+    "label": "Ismétlődő esemény (hetente)",
+    "description": "Az esemény minden héten ugyanezen a napon és időpontban létrejön.",
+    "repeatFrom": "Intervallum kezdete",
+    "repeatUntil": "Intervallum vége",
+    "validation": {
+      "intervalRequired": "Mindkét dátum megadása kötelező",
+      "maxIntervalExceeded": "Az intervallum nem lehet hosszabb 1 évnél"
+    },
+    "preview": {
+      "title": "Ismétlődő események előnézete",
+      "description": "Az alábbi dátumokon jön létre esemény. Jelöld be a kihagyandókat.",
+      "date": "Dátum",
+      "status": "Státusz",
+      "conflictWith": "Ütközik",
+      "skip": "Kihagyás",
+      "ok": "Szabad",
+      "conflict": "Foglalt",
+      "noConflicts": "Nincs ütközés, minden dátum szabad.",
+      "allConflicts": "Minden dátum ütközik! Nem hozható létre esemény.",
+      "confirm": "Létrehozás",
+      "confirmWithSkips": "Létrehozás ({{count}} esemény)"
+    }
   },
   "participants": {
     "title": "Résztvevők",

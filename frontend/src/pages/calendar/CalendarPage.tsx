@@ -181,17 +181,29 @@ export default function CalendarPage() {
     },
   })
 
+  // Helper to get room color from room ID
+  const getRoomColor = (roomId: number | string | null | undefined): string => {
+    if (!roomId || !rooms) {
+      console.log('getRoomColor: no roomId or rooms', { roomId, roomsCount: rooms?.length })
+      return '#3b82f6' // default blue
+    }
+    const room = rooms.find(r => String(r.id) === String(roomId))
+    console.log('getRoomColor:', { roomId, room, color: room?.color })
+    return room?.color || '#3b82f6'
+  }
+
   // Map events to FullCalendar format
-  // Personal training events (INDIVIDUAL, BLOCK) - check if event has pricing_id assigned
+  // Personal training events (INDIVIDUAL, BLOCK) - use room color
   const individualEvents = events?.map(event => {
     const canEdit = isEventOwner(event)
+    const roomColor = getRoomColor(event.room_id)
     return {
       id: `event-${event.id}`,
       title: getEventTitle(event),
       start: event.starts_at,
       end: event.ends_at,
-      backgroundColor: canEdit ? getEventColor(event.type) : getEventColor(event.type) + '80', // 50% opacity for non-owned
-      borderColor: getEventColor(event.type),
+      backgroundColor: canEdit ? roomColor : roomColor + '80', // 50% opacity for non-owned
+      borderColor: roomColor,
       editable: canEdit,
       startEditable: canEdit, // Allow drag & drop only for owned events
       durationEditable: canEdit, // Allow resize only for owned events
@@ -199,19 +211,22 @@ export default function CalendarPage() {
     }
   }) ?? []
 
-  // Map group classes to FullCalendar format
-  const groupClassEvents = (showGroupClasses && groupClasses) ? groupClasses.map(classOccurrence => ({
-    id: `class-${classOccurrence.id}`,
-    title: classOccurrence.class_template?.title || classOccurrence.class_template?.name || t('event.eventType.GROUP_CLASS'),
-    start: classOccurrence.starts_at,
-    end: classOccurrence.ends_at,
-    backgroundColor: '#10b981', // green for group classes
-    borderColor: '#10b981',
-    editable: isAdmin, // Only admins can edit group classes
-    startEditable: isAdmin, // Allow drag & drop
-    durationEditable: isAdmin, // Allow resize
-    extendedProps: { classOccurrence, isGroupClass: true },
-  })) : []
+  // Map group classes to FullCalendar format - use room color
+  const groupClassEvents = (showGroupClasses && groupClasses) ? groupClasses.map(classOccurrence => {
+    const roomColor = getRoomColor(classOccurrence.room_id)
+    return {
+      id: `class-${classOccurrence.id}`,
+      title: classOccurrence.class_template?.title || classOccurrence.class_template?.name || t('event.eventType.GROUP_CLASS'),
+      start: classOccurrence.starts_at,
+      end: classOccurrence.ends_at,
+      backgroundColor: roomColor,
+      borderColor: roomColor,
+      editable: isAdmin, // Only admins can edit group classes
+      startEditable: isAdmin, // Allow drag & drop
+      durationEditable: isAdmin, // Allow resize
+      extendedProps: { classOccurrence, isGroupClass: true },
+    }
+  }) : []
 
   // Combine all events
   const calendarEvents = [...individualEvents, ...groupClassEvents]
@@ -227,19 +242,6 @@ export default function CalendarPage() {
     return t(`event.eventType.${event.type}`)
   }
 
-  // Get event color based on type
-  function getEventColor(type: Event['type']): string {
-    switch (type) {
-      case 'INDIVIDUAL':
-        return '#3b82f6' // blue
-      case 'GROUP_CLASS':
-        return '#10b981' // green
-      case 'BLOCK':
-        return '#6b7280' // gray
-      default:
-        return '#3b82f6'
-    }
-  }
 
   // Handle date/time slot selection
   const handleDateSelect = (selectInfo: DateSelectArg) => {
@@ -730,6 +732,9 @@ export default function CalendarPage() {
           editable={true}
           selectable={true}
           selectMirror={true}
+          longPressDelay={300}
+          selectLongPressDelay={300}
+          eventLongPressDelay={300}
           dayMaxEvents={true}
           weekends={true}
           height="auto"

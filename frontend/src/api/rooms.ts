@@ -3,14 +3,16 @@ import apiClient from './client'
 import type { ApiResponse } from '@/types/api'
 
 export interface Room {
-  id: string
+  id: number
   name: string
-  location: string
-  facility: string
+  location?: string
+  facility?: string
+  site_id?: number
   capacity: number
-  is_active: boolean
-  created_at: string
-  updated_at: string
+  color?: string
+  is_active?: boolean
+  created_at?: string
+  updated_at?: string
 }
 
 export const roomsApi = {

@@ -26,6 +26,7 @@ class StaffProfile extends Model
         'visibility',
         'email_reminder_24h',
         'email_reminder_2h',
+        'daily_schedule_notification',
     ];
 
     protected function casts(): array
@@ -37,6 +38,7 @@ class StaffProfile extends Model
             'is_available_for_booking' => 'boolean',
             'email_reminder_24h' => 'boolean',
             'email_reminder_2h' => 'boolean',
+            'daily_schedule_notification' => 'boolean',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
             'deleted_at' => 'datetime',

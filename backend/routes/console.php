@@ -36,6 +36,14 @@ Schedule::command('reminders:send-daily --hours=2')
     ->withoutOverlapping()
     ->runInBackground();
 
+// Send daily trainer schedule notifications (hour is configurable via settings)
+Schedule::command('schedule:send-daily-trainer-notifications')
+    ->hourly()
+    ->timezone('Europe/Budapest')
+    ->onOneServer()
+    ->withoutOverlapping()
+    ->runInBackground();
+
 // Calculate monthly payouts on the 1st of each month at 3:00 AM
 Schedule::command('payouts:calculate-monthly')
     ->monthlyOn(1, '03:00')

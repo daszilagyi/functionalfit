@@ -7,7 +7,7 @@ import ResetPasswordPage from './pages/auth/ResetPasswordPage'
 import DashboardPage from './pages/DashboardPage'
 import CalendarPage from './pages/calendar/CalendarPage'
 import ClassesPage from './pages/classes/ClassesPage'
-import ClientActivityPage from './pages/client/ClientActivityPage'
+import ActivityPageRouter from './pages/ActivityPageRouter'
 import StaffDashboardPage from './pages/staff/StaffDashboardPage'
 import StaffClientsPage from './pages/staff/StaffClientsPage'
 import SettingsPage from './pages/SettingsPage'
@@ -25,6 +25,7 @@ import ServiceTypesPage from './pages/admin/ServiceTypesPage'
 import SettlementsPage from './pages/admin/SettlementsPage'
 import EventChangesPage from './pages/admin/EventChangesPage'
 import ClientImportPage from './pages/admin/ClientImportPage'
+import AdminSettingsPage from './pages/admin/AdminSettingsPage'
 import NotFoundPage from './pages/NotFoundPage'
 import PublicClassesPage from './pages/public/PublicClassesPage'
 
@@ -72,7 +73,7 @@ export const routes: RouteObject[] = [
       },
       {
         path: 'activity',
-        element: <ClientActivityPage />,
+        element: <ActivityPageRouter />,
       },
       {
         path: 'staff',
@@ -148,6 +149,10 @@ export const routes: RouteObject[] = [
           {
             path: 'client-import',
             element: <ClientImportPage />,
+          },
+          {
+            path: 'settings',
+            element: <AdminSettingsPage />,
           },
         ],
       },

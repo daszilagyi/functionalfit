@@ -20,6 +20,7 @@ export interface StaffClient {
   emergency_contact_name?: string | null
   emergency_contact_phone?: string | null
   notes?: string | null
+  daily_training_notification?: boolean
   created_at: string
 }
 
@@ -38,13 +39,20 @@ export interface UpdateClientRequest {
   emergency_contact_name?: string | null
   emergency_contact_phone?: string | null
   notes?: string | null
+  daily_training_notification?: boolean
+}
+
+export interface ClientListParams {
+  search?: string
+  sort_by?: 'name' | 'email' | 'created_at'
+  sort_dir?: 'asc' | 'desc'
 }
 
 export const clientsApi = {
   /**
    * List all clients (staff/admin only)
    */
-  list: async (params?: { search?: string }): Promise<PaginatedResponse<StaffClient>> => {
+  list: async (params?: ClientListParams): Promise<PaginatedResponse<StaffClient>> => {
     const response = await apiClient.get<ApiResponse<PaginatedResponse<StaffClient>>>(
       '/staff/clients',
       { params }
@@ -172,6 +180,7 @@ export interface ClientImportResult {
     client_id: number
     name: string
     email: string
+    email_auto_generated: boolean
     phone: string
     service_type: string | null
     entry_fee: number
@@ -189,7 +198,7 @@ export interface ClientImportResult {
 export const clientKeys = {
   all: ['clients'] as const,
   lists: () => [...clientKeys.all, 'list'] as const,
-  list: (params?: { search?: string }) => [...clientKeys.lists(), params] as const,
+  list: (params?: ClientListParams) => [...clientKeys.lists(), params] as const,
   details: () => [...clientKeys.all, 'detail'] as const,
   detail: (id: string) => [...clientKeys.details(), id] as const,
   activity: (id: string, filters?: ActivityHistoryFilters) =>

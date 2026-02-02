@@ -141,6 +141,33 @@ export interface CreateEventRequest {
   duration_minutes?: number
   ends_at?: string // Alternative to duration_minutes
   notes?: string
+  // Recurring event fields
+  is_recurring?: boolean
+  repeat_from?: string // YYYY-MM-DD
+  repeat_until?: string // YYYY-MM-DD
+  skip_dates?: string[] // YYYY-MM-DD dates to skip
+}
+
+// Recurring event preview types
+export interface RecurringPreviewDate {
+  date: string // YYYY-MM-DD
+  starts_at: string
+  ends_at: string
+  status: 'ok' | 'conflict'
+  conflict_with?: string
+}
+
+export interface RecurringPreviewResponse {
+  dates: RecurringPreviewDate[]
+  total: number
+  ok_count: number
+  conflict_count: number
+}
+
+export interface RecurringEventResponse {
+  count: number
+  events: Event[]
+  skipped_dates: string[]
 }
 
 export interface UpdateEventRequest {

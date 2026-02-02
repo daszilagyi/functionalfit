@@ -8,6 +8,8 @@ import type {
   UpdateEventRequest,
   CheckInRequest,
   CheckInResponse,
+  RecurringPreviewResponse,
+  RecurringEventResponse,
 } from '@/types/event'
 
 export const eventsApi = {
@@ -99,6 +101,50 @@ export const eventsApi = {
   checkIn: async (eventId: string, data: CheckInRequest): Promise<CheckInResponse> => {
     const response = await apiClient.post<ApiResponse<CheckInResponse>>(
       `/staff/events/${eventId}/checkin`,
+      data
+    )
+    return response.data.data
+  },
+
+  /**
+   * Preview recurring events (staff only - check for conflicts)
+   */
+  previewRecurring: async (data: CreateEventRequest): Promise<RecurringPreviewResponse> => {
+    const response = await apiClient.post<ApiResponse<RecurringPreviewResponse>>(
+      '/staff/events/preview-recurring',
+      data
+    )
+    return response.data.data
+  },
+
+  /**
+   * Preview recurring events (admin - check for conflicts)
+   */
+  adminPreviewRecurring: async (data: CreateEventRequest): Promise<RecurringPreviewResponse> => {
+    const response = await apiClient.post<ApiResponse<RecurringPreviewResponse>>(
+      '/admin/events/preview-recurring',
+      data
+    )
+    return response.data.data
+  },
+
+  /**
+   * Create recurring events (staff only - batch creation)
+   */
+  createRecurring: async (data: CreateEventRequest): Promise<RecurringEventResponse> => {
+    const response = await apiClient.post<ApiResponse<RecurringEventResponse>>(
+      '/staff/events',
+      data
+    )
+    return response.data.data
+  },
+
+  /**
+   * Create recurring events as admin (batch creation)
+   */
+  adminCreateRecurring: async (data: CreateEventRequest): Promise<RecurringEventResponse> => {
+    const response = await apiClient.post<ApiResponse<RecurringEventResponse>>(
+      '/admin/events',
       data
     )
     return response.data.data
