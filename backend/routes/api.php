@@ -302,6 +302,7 @@ Route::prefix('v1')->group(function () {
             // Exports (legacy)
             Route::get('/exports/payout', [StaffExportController::class, 'payout']);
             Route::get('/exports/attendance', [StaffExportController::class, 'attendance']);
+            Route::get('/exports/activity', [StaffExportController::class, 'activityExport']);
 
             // Reports
             Route::prefix('reports')->group(function () {
@@ -357,6 +358,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('/revenue/export', [ReportController::class, 'exportRevenue']);
                 Route::get('/utilization/export', [ReportController::class, 'exportUtilization']);
                 Route::get('/clients/export', [ReportController::class, 'exportClients']);
+                Route::get('/payouts/per-client/export', [ReportController::class, 'exportPayoutsPerClient']);
             });
 
             // Admin reports (new)

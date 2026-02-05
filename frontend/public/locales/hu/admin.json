@@ -276,7 +276,9 @@
       "kpiCards": "KPI Mutatók",
       "detailedBreakdown": "Részletes Bontás"
     },
-    "noDataForPeriod": "Nincs adat a kiválasztott időszakra"
+    "noDataForPeriod": "Nincs adat a kiválasztott időszakra",
+    "perClientPayouts": "Vendég kifizetések exportálása",
+    "perClientPayoutsDesc": "Vendégenkénti kifizetési bontás"
   },
   "passes": {
     "status": {

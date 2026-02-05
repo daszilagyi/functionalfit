@@ -231,7 +231,9 @@
     "passesSold": "Passes Sold",
     "averagePassPrice": "Average Pass Price",
     "clientName": "Client Name",
-    "email": "Email"
+    "email": "Email",
+    "perClientPayouts": "Export client payouts",
+    "perClientPayoutsDesc": "Payout breakdown per client"
   },
   "passes": {
     "status": {

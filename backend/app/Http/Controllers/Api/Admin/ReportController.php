@@ -1019,6 +1019,204 @@ class ReportController extends Controller
     }
 
     /**
+     * Export per-client payouts report to XLSX with 2 worksheets
+     * (Summary + Detailed items)
+     */
+    public function exportPayoutsPerClient(Request $request): Response
+    {
+        $validated = $request->validate([
+            'date_from' => ['required', 'date'],
+            'date_to' => ['required', 'date', 'after_or_equal:date_from'],
+        ]);
+
+        $dateFrom = Carbon::parse($validated['date_from'])->startOfDay();
+        $dateTo = Carbon::parse($validated['date_to'])->endOfDay();
+
+        // Fetch all events in range with relations
+        $events = Event::with(['client.user', 'additionalClients.user', 'staff.user', 'room', 'serviceType'])
+            ->whereBetween('starts_at', [$dateFrom, $dateTo])
+            ->orderBy('starts_at')
+            ->get();
+
+        // Build per-client data: client_id => [name, email, sessions[], totals]
+        $clientData = [];
+
+        foreach ($events as $event) {
+            // Main client (events.client_id)
+            if ($event->client_id && $event->client) {
+                $clientId = $event->client_id;
+                if (!isset($clientData[$clientId])) {
+                    $clientData[$clientId] = [
+                        'name' => $event->client->user?->name ?? 'Ismeretlen',
+                        'email' => $event->client->user?->email ?? '-',
+                        'total_entry_fee' => 0,
+                        'total_trainer_fee' => 0,
+                        'session_count' => 0,
+                        'details' => [],
+                    ];
+                }
+
+                $entryFee = $event->entry_fee_brutto ?? 0;
+                $trainerFee = $event->trainer_fee_brutto ?? 0;
+
+                $clientData[$clientId]['total_entry_fee'] += $entryFee;
+                $clientData[$clientId]['total_trainer_fee'] += $trainerFee;
+                $clientData[$clientId]['session_count']++;
+                $clientData[$clientId]['details'][] = [
+                    'date' => $event->starts_at->format('Y-m-d'),
+                    'time' => $event->starts_at->format('H:i') . ' - ' . $event->ends_at->format('H:i'),
+                    'trainer' => $event->staff?->user?->name ?? '-',
+                    'type' => '1:1 Edzés',
+                    'service' => $event->serviceType?->name ?? '-',
+                    'room' => $event->room?->name ?? '-',
+                    'entry_fee' => $entryFee,
+                    'trainer_fee' => $trainerFee,
+                    'status' => $this->translateAttendanceStatus($event->attendance_status),
+                ];
+            }
+
+            // Additional clients from pivot table
+            foreach ($event->additionalClients as $addClient) {
+                $clientId = $addClient->id;
+                if (!isset($clientData[$clientId])) {
+                    $clientData[$clientId] = [
+                        'name' => $addClient->user?->name ?? 'Ismeretlen',
+                        'email' => $addClient->user?->email ?? '-',
+                        'total_entry_fee' => 0,
+                        'total_trainer_fee' => 0,
+                        'session_count' => 0,
+                        'details' => [],
+                    ];
+                }
+
+                $entryFee = $addClient->pivot->entry_fee_brutto ?? 0;
+                $trainerFee = $addClient->pivot->trainer_fee_brutto ?? 0;
+
+                $clientData[$clientId]['total_entry_fee'] += $entryFee;
+                $clientData[$clientId]['total_trainer_fee'] += $trainerFee;
+                $clientData[$clientId]['session_count']++;
+                $clientData[$clientId]['details'][] = [
+                    'date' => $event->starts_at->format('Y-m-d'),
+                    'time' => $event->starts_at->format('H:i') . ' - ' . $event->ends_at->format('H:i'),
+                    'trainer' => $event->staff?->user?->name ?? '-',
+                    'type' => '1:1 Edzés (vendég)',
+                    'service' => $event->serviceType?->name ?? '-',
+                    'room' => $event->room?->name ?? '-',
+                    'entry_fee' => $entryFee,
+                    'trainer_fee' => $trainerFee,
+                    'status' => $this->translateAttendanceStatus($addClient->pivot->attendance_status ?? null),
+                ];
+            }
+        }
+
+        // Sort by client name
+        uasort($clientData, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+
+        // Create spreadsheet with 2 worksheets
+        $spreadsheet = new Spreadsheet();
+
+        // ---- Sheet 1: Összesítő (Summary) ----
+        $summarySheet = $spreadsheet->getActiveSheet();
+        $summarySheet->setTitle('Összesítő');
+
+        $summaryHeaders = ['Vendég neve', 'Email', 'Alkalmak száma', 'Belépődíj összesen (HUF)', 'Edzői díj összesen (HUF)', 'Összesen (HUF)'];
+        $col = 'A';
+        foreach ($summaryHeaders as $header) {
+            $summarySheet->setCellValue($col . '1', $header);
+            $col++;
+        }
+        $this->styleHeaderRow($summarySheet, 'A1:F1');
+
+        $row = 2;
+        $grandTotalEntry = 0;
+        $grandTotalTrainer = 0;
+        $grandTotalSessions = 0;
+
+        foreach ($clientData as $data) {
+            $total = $data['total_entry_fee'] + $data['total_trainer_fee'];
+            $summarySheet->setCellValue('A' . $row, $data['name']);
+            $summarySheet->setCellValue('B' . $row, $data['email']);
+            $summarySheet->setCellValue('C' . $row, $data['session_count']);
+            $summarySheet->setCellValue('D' . $row, $data['total_entry_fee']);
+            $summarySheet->setCellValue('E' . $row, $data['total_trainer_fee']);
+            $summarySheet->setCellValue('F' . $row, $total);
+            $row++;
+
+            $grandTotalEntry += $data['total_entry_fee'];
+            $grandTotalTrainer += $data['total_trainer_fee'];
+            $grandTotalSessions += $data['session_count'];
+        }
+
+        // Summary row
+        $summarySheet->setCellValue('A' . $row, 'Összesen');
+        $summarySheet->setCellValue('C' . $row, $grandTotalSessions);
+        $summarySheet->setCellValue('D' . $row, $grandTotalEntry);
+        $summarySheet->setCellValue('E' . $row, $grandTotalTrainer);
+        $summarySheet->setCellValue('F' . $row, $grandTotalEntry + $grandTotalTrainer);
+        $this->styleSummaryRow($summarySheet, 'A' . $row . ':F' . $row);
+
+        foreach (range('A', 'F') as $c) {
+            $summarySheet->getColumnDimension($c)->setAutoSize(true);
+        }
+
+        // ---- Sheet 2: Részletes tételek (Detailed items) ----
+        $detailSheet = $spreadsheet->createSheet();
+        $detailSheet->setTitle('Részletes tételek');
+
+        $detailHeaders = ['Vendég neve', 'Dátum', 'Időpont', 'Edző', 'Típus', 'Szolgáltatás', 'Terem', 'Belépődíj (HUF)', 'Edzői díj (HUF)', 'Összesen (HUF)', 'Státusz'];
+        $col = 'A';
+        foreach ($detailHeaders as $header) {
+            $detailSheet->setCellValue($col . '1', $header);
+            $col++;
+        }
+        $this->styleHeaderRow($detailSheet, 'A1:K1');
+
+        $row = 2;
+        $detailTotalEntry = 0;
+        $detailTotalTrainer = 0;
+
+        foreach ($clientData as $data) {
+            // Sort details by date
+            $details = $data['details'];
+            usort($details, fn($a, $b) => strcmp($a['date'], $b['date']));
+
+            foreach ($details as $detail) {
+                $detailSheet->setCellValue('A' . $row, $data['name']);
+                $detailSheet->setCellValue('B' . $row, $detail['date']);
+                $detailSheet->setCellValue('C' . $row, $detail['time']);
+                $detailSheet->setCellValue('D' . $row, $detail['trainer']);
+                $detailSheet->setCellValue('E' . $row, $detail['type']);
+                $detailSheet->setCellValue('F' . $row, $detail['service']);
+                $detailSheet->setCellValue('G' . $row, $detail['room']);
+                $detailSheet->setCellValue('H' . $row, $detail['entry_fee']);
+                $detailSheet->setCellValue('I' . $row, $detail['trainer_fee']);
+                $detailSheet->setCellValue('J' . $row, $detail['entry_fee'] + $detail['trainer_fee']);
+                $detailSheet->setCellValue('K' . $row, $detail['status']);
+                $row++;
+
+                $detailTotalEntry += $detail['entry_fee'];
+                $detailTotalTrainer += $detail['trainer_fee'];
+            }
+        }
+
+        // Summary row
+        $detailSheet->setCellValue('A' . $row, 'Összesen');
+        $detailSheet->setCellValue('H' . $row, $detailTotalEntry);
+        $detailSheet->setCellValue('I' . $row, $detailTotalTrainer);
+        $detailSheet->setCellValue('J' . $row, $detailTotalEntry + $detailTotalTrainer);
+        $this->styleSummaryRow($detailSheet, 'A' . $row . ':K' . $row);
+
+        foreach (range('A', 'K') as $c) {
+            $detailSheet->getColumnDimension($c)->setAutoSize(true);
+        }
+
+        // Set active sheet back to summary
+        $spreadsheet->setActiveSheetIndex(0);
+
+        return $this->downloadXlsx($spreadsheet, 'vendeg_kifizetes_' . $dateFrom->format('Y-m-d') . '_' . $dateTo->format('Y-m-d') . '.xlsx');
+    }
+
+    /**
      * Style header row
      */
     private function styleHeaderRow($sheet, string $range): void

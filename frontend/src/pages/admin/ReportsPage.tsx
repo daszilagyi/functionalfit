@@ -56,6 +56,7 @@ export default function ReportsPage() {
   })
 
   const [isExporting, setIsExporting] = useState(false)
+  const [isExportingPerClient, setIsExportingPerClient] = useState(false)
   const [expandedPayoutRows, setExpandedPayoutRows] = useState<Set<number>>(new Set())
   const [expandedClientRows, setExpandedClientRows] = useState<Set<number>>(new Set())
 
@@ -120,6 +121,42 @@ export default function ReportsPage() {
       })
     } finally {
       setIsExporting(false)
+    }
+  }
+
+  const handleExportPerClientPayouts = async () => {
+    try {
+      setIsExportingPerClient(true)
+      toast({
+        title: t('reports.downloading'),
+        description: t('reports.perClientPayouts'),
+      })
+
+      const blob = await adminReportsApi.exportPayoutsPerClient(dateFrom, dateTo)
+
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `vendeg_kifizetes_${dateFrom}_${dateTo}.xlsx`
+      document.body.appendChild(link)
+      link.click()
+
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      toast({
+        title: t('reports.downloadSuccess'),
+        description: `vendeg_kifizetes_${dateFrom}_${dateTo}.xlsx`,
+      })
+    } catch (error) {
+      console.error('Export error:', error)
+      toast({
+        variant: 'destructive',
+        title: t('reports.downloadError'),
+        description: t('common:errorOccurred'),
+      })
+    } finally {
+      setIsExportingPerClient(false)
     }
   }
 
@@ -301,10 +338,16 @@ export default function ReportsPage() {
                   {dateFrom} - {dateTo}
                 </CardDescription>
               </div>
-              <Button variant="outline" size="sm" onClick={() => handleExport('payouts')}>
-                <Download className="h-4 w-4 mr-2" />
-                {t('reports.exportToExcel')}
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleExport('payouts')}>
+                  <Download className="h-4 w-4 mr-2" />
+                  {t('reports.exportToExcel')}
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleExportPerClientPayouts} disabled={isExportingPerClient}>
+                  <Users className="h-4 w-4 mr-2" />
+                  {isExportingPerClient ? t('reports.downloading') : t('reports.perClientPayouts')}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {isLoadingPayout ? (

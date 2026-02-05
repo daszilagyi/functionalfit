@@ -101,6 +101,17 @@ export const adminReportsApi = {
     })
     return response.data
   },
+
+  /**
+   * Export per-client payouts report to XLSX (2 worksheets: summary + details)
+   */
+  exportPayoutsPerClient: async (dateFrom: string, dateTo: string): Promise<Blob> => {
+    const response = await apiClient.get('/admin/reports/payouts/per-client/export', {
+      params: { date_from: dateFrom, date_to: dateTo },
+      responseType: 'blob',
+    })
+    return response.data
+  },
 }
 
 // ============================================
