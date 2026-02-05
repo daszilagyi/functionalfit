@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { format } from 'date-fns'
@@ -9,7 +9,7 @@ import interactionPlugin from '@fullcalendar/interaction'
 import { eventsApi, eventKeys } from '@/api/events'
 import { roomsApi, roomKeys } from '@/api/rooms'
 import { classesApi, classKeys } from '@/api/classes'
-import { Check, X, AlertTriangle, Plus } from 'lucide-react'
+import { Check, X, AlertTriangle, Plus, CalendarIcon } from 'lucide-react'
 import { isSameDayMove } from '@/lib/validations/event'
 import { useToast } from '@/hooks/use-toast'
 import { EventFormModal } from '@/components/calendar/EventFormModal'
@@ -20,6 +20,7 @@ import { EventTypeSelectorModal } from '@/components/calendar/EventTypeSelectorM
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Switch } from '@/components/ui/switch'
@@ -64,6 +65,7 @@ export default function CalendarPage() {
     end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days ahead
   })
   const [currentView, setCurrentView] = useState<'timeGridWeek' | 'timeGridDay' | 'timeGridTwoDay'>('timeGridTwoDay')
+  const [currentDate, setCurrentDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'))
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null)
   const [showGroupClasses, setShowGroupClasses] = useState(true)
   const [showOnlyMyEvents, setShowOnlyMyEvents] = useState(false)
@@ -423,21 +425,49 @@ export default function CalendarPage() {
   // Handle dates set (when user navigates calendar)
   const handleDatesSet = (dateInfo: DatesSetArg) => {
     setDateRange({ start: dateInfo.start, end: dateInfo.end })
+    setCurrentDate(format(dateInfo.start, 'yyyy-MM-dd'))
+    setCurrentView(dateInfo.view.type as typeof currentView)
   }
+
+  // Handle view change via FullCalendar API (preserves date position)
+  const changeView = useCallback((viewName: 'timeGridWeek' | 'timeGridDay' | 'timeGridTwoDay') => {
+    const api = calendarRef.current?.getApi()
+    if (api) {
+      api.changeView(viewName)
+      setCurrentView(viewName)
+    }
+  }, [])
 
   // Handle "today + tomorrow" button click
   const handleTodayTomorrowClick = () => {
-    setCurrentView('timeGridTwoDay')
+    changeView('timeGridTwoDay')
   }
 
   // Handle "week" view button click
   const handleWeekViewClick = () => {
-    setCurrentView('timeGridWeek')
+    changeView('timeGridWeek')
   }
 
   // Handle "day" view button click
   const handleDayViewClick = () => {
-    setCurrentView('timeGridDay')
+    changeView('timeGridDay')
+  }
+
+  // Handle "today" button click - navigate to current date
+  const handleTodayClick = () => {
+    const api = calendarRef.current?.getApi()
+    if (api) {
+      api.today()
+    }
+  }
+
+  // Handle date picker change
+  const handleDateChange = (dateString: string) => {
+    if (!dateString) return
+    const api = calendarRef.current?.getApi()
+    if (api) {
+      api.gotoDate(dateString)
+    }
   }
 
   // Handle "add event" button click
@@ -711,15 +741,30 @@ export default function CalendarPage() {
             </Label>
           </div>
 
+          {/* Date picker */}
+          <div className="flex items-center gap-1">
+            <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0 hidden sm:block" />
+            <Input
+              type="date"
+              value={currentDate}
+              onChange={(e) => handleDateChange(e.target.value)}
+              className="w-[140px] sm:w-[160px] h-9 text-xs sm:text-sm"
+              aria-label={t('goToDate')}
+            />
+          </div>
+
           {/* View buttons */}
           <div className="flex gap-1 sm:gap-2 ml-auto">
-            <Button variant="outline" size="sm" onClick={handleTodayTomorrowClick} className="text-xs sm:text-sm px-2 sm:px-3">
+            <Button variant="outline" size="sm" onClick={handleTodayClick} className="text-xs sm:text-sm px-2 sm:px-3">
+              {t('today')}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleTodayTomorrowClick} className={`text-xs sm:text-sm px-2 sm:px-3 ${currentView === 'timeGridTwoDay' ? 'bg-accent' : ''}`}>
               {t('todayTomorrow')}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleWeekViewClick} className="text-xs sm:text-sm px-2 sm:px-3">
+            <Button variant="outline" size="sm" onClick={handleWeekViewClick} className={`text-xs sm:text-sm px-2 sm:px-3 ${currentView === 'timeGridWeek' ? 'bg-accent' : ''}`}>
               {t('weekView')}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleDayViewClick} className="text-xs sm:text-sm px-2 sm:px-3">
+            <Button variant="outline" size="sm" onClick={handleDayViewClick} className={`text-xs sm:text-sm px-2 sm:px-3 ${currentView === 'timeGridDay' ? 'bg-accent' : ''}`}>
               {t('dayView')}
             </Button>
           </div>
@@ -732,7 +777,6 @@ export default function CalendarPage() {
           ref={calendarRef}
           plugins={[timeGridPlugin, interactionPlugin]}
           initialView={currentView}
-          key={currentView}
           views={{
             timeGridTwoDay: {
               type: 'timeGrid',
