@@ -27,6 +27,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
 import { ClientPriceCodesSection } from './ClientPriceCodesSection'
+import { StaffPriceCodesSection } from './StaffPriceCodesSection'
 import type { UserWithProfile, UpdateUserRequest } from '@/types/admin'
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/types/api'
@@ -199,6 +200,8 @@ export function UserEditModal({
 
   // For clients, show tabs to include price codes section
   const isClient = user.role === 'client'
+  // For staff/admin with staff_profile, show tabs to include price codes section
+  const isStaffWithProfile = (user.role === 'staff' || user.role === 'admin') && !!user.staff_profile?.id
 
   const renderBasicForm = () => (
     <form onSubmit={onSubmit} className="space-y-4">
@@ -491,7 +494,7 @@ export function UserEditModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className={`max-h-[90vh] overflow-y-auto ${isClient ? 'w-[95vw] sm:max-w-[700px]' : 'w-[95vw] sm:max-w-[500px]'}`}>
+      <DialogContent className={`max-h-[90vh] overflow-y-auto ${isClient || isStaffWithProfile ? 'w-[95vw] sm:max-w-[700px]' : 'w-[95vw] sm:max-w-[500px]'}`}>
         <DialogHeader>
           <DialogTitle className="text-lg sm:text-xl truncate pr-8">
             {t('admin:users.editUser', 'Edit User')}: {user.name}
@@ -509,6 +512,19 @@ export function UserEditModal({
             </TabsContent>
             <TabsContent value="pricing" className="mt-4">
               <ClientPriceCodesSection clientId={user.client.id} />
+            </TabsContent>
+          </Tabs>
+        ) : isStaffWithProfile && user.staff_profile?.id ? (
+          <Tabs defaultValue="details" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="details" className="text-xs sm:text-sm">{t('admin:users.staffDetails', 'Staff Details')}</TabsTrigger>
+              <TabsTrigger value="pricing" className="text-xs sm:text-sm">{t('admin:staffPriceCodes.title', 'Price Codes')}</TabsTrigger>
+            </TabsList>
+            <TabsContent value="details" className="mt-4">
+              {renderBasicForm()}
+            </TabsContent>
+            <TabsContent value="pricing" className="mt-4">
+              <StaffPriceCodesSection staffProfileId={user.staff_profile.id} />
             </TabsContent>
           </Tabs>
         ) : (

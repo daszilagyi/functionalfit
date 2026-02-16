@@ -68,4 +68,9 @@ class StaffProfile extends Model
     {
         return $this->hasMany(ClassOccurrence::class, 'trainer_id');
     }
+
+    public function priceCodes(): HasMany
+    {
+        return $this->hasMany(StaffPriceCode::class);
+    }
 }

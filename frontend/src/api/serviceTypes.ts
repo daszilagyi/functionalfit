@@ -4,6 +4,8 @@ import type {
   ServiceTypeFormData,
   ClientPriceCode,
   ClientPriceCodeFormData,
+  StaffPriceCode,
+  StaffPriceCodeFormData,
   PricingResolveResponse,
 } from '@/types/serviceType'
 
@@ -20,6 +22,13 @@ export const clientPriceCodeKeys = {
   lists: () => [...clientPriceCodeKeys.all, 'list'] as const,
   listByClient: (clientId: number) => [...clientPriceCodeKeys.lists(), 'client', clientId] as const,
   detail: (id: number) => [...clientPriceCodeKeys.all, 'detail', id] as const,
+}
+
+export const staffPriceCodeKeys = {
+  all: ['staffPriceCodes'] as const,
+  lists: () => [...staffPriceCodeKeys.all, 'list'] as const,
+  listByStaff: (staffProfileId: number) => [...staffPriceCodeKeys.lists(), 'staff', staffProfileId] as const,
+  detail: (id: number) => [...staffPriceCodeKeys.all, 'detail', id] as const,
 }
 
 export const pricingResolveKeys = {
@@ -180,6 +189,58 @@ export const staffClientPriceCodesApi = {
    */
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/staff/client-price-codes/${id}`)
+  },
+}
+
+// Staff Price Codes API
+export const staffPriceCodesApi = {
+  /**
+   * List all price codes for a staff member
+   */
+  listByStaff: async (staffProfileId: number): Promise<StaffPriceCode[]> => {
+    const { data } = await apiClient.get<{ data: StaffPriceCode[] }>(
+      `/admin/staff-profiles/${staffProfileId}/price-codes`
+    )
+    return data.data
+  },
+
+  /**
+   * Create a new price code for a staff member
+   */
+  create: async (staffProfileId: number, priceCodeData: StaffPriceCodeFormData): Promise<StaffPriceCode> => {
+    const { data } = await apiClient.post<{ data: StaffPriceCode }>(
+      `/admin/staff-profiles/${staffProfileId}/price-codes`,
+      priceCodeData
+    )
+    return data.data
+  },
+
+  /**
+   * Update an existing staff price code
+   */
+  update: async (id: number, priceCodeData: Partial<StaffPriceCodeFormData>): Promise<StaffPriceCode> => {
+    const { data } = await apiClient.patch<{ data: StaffPriceCode }>(
+      `/admin/staff-price-codes/${id}`,
+      priceCodeData
+    )
+    return data.data
+  },
+
+  /**
+   * Toggle active status of a staff price code
+   */
+  toggleActive: async (id: number): Promise<StaffPriceCode> => {
+    const { data } = await apiClient.patch<{ data: StaffPriceCode }>(
+      `/admin/staff-price-codes/${id}/toggle-active`
+    )
+    return data.data
+  },
+
+  /**
+   * Delete a staff price code
+   */
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(`/admin/staff-price-codes/${id}`)
   },
 }
 

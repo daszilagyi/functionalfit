@@ -72,3 +72,39 @@ export interface ClientPriceCodeFormData {
   valid_until?: string | null;
   is_active?: boolean;
 }
+
+/**
+ * Staff price code entity - staff-specific pricing per service type
+ * For when staff participate as guests in sessions
+ */
+export interface StaffPriceCode {
+  id: number;
+  staff_profile_id: number;
+  staff_email: string;
+  service_type_id: number;
+  service_type?: ServiceType;
+  price_code: string | null;
+  entry_fee_brutto: number;
+  trainer_fee_brutto: number;
+  currency: string;
+  valid_from: string;
+  valid_until: string | null;
+  is_active: boolean;
+  created_by: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Form data for creating/updating a staff price code
+ */
+export interface StaffPriceCodeFormData {
+  service_type_id: number;
+  price_code?: string;
+  entry_fee_brutto: number;
+  trainer_fee_brutto: number;
+  currency?: string;
+  valid_from: string;
+  valid_until?: string | null;
+  is_active?: boolean;
+}

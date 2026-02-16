@@ -8,6 +8,8 @@ use App\Exceptions\MissingPricingException;
 use App\Models\Client;
 use App\Models\ClientPriceCode;
 use App\Models\ServiceType;
+use App\Models\StaffPriceCode;
+use App\Models\StaffProfile;
 use App\Models\User;
 use Carbon\Carbon;
 
@@ -206,6 +208,201 @@ class PriceCodeService
     {
         ClientPriceCode::where('client_id', $client->id)
             ->update(['client_email' => $newEmail]);
+    }
+
+    /**
+     * Resolve pricing by staff email and service type code.
+     * Used when staff members participate in training sessions as clients.
+     *
+     * @param string $staffEmail
+     * @param string $serviceTypeCode
+     * @return array{entry_fee_brutto: int, trainer_fee_brutto: int, currency: string, source: string, price_code?: string}
+     * @throws MissingPricingException
+     */
+    public function resolveByStaffEmailAndServiceType(
+        string $staffEmail,
+        string $serviceTypeCode
+    ): array {
+        // 1. Find active service type by code
+        $serviceType = ServiceType::byCode($serviceTypeCode)
+            ->active()
+            ->first();
+
+        if (!$serviceType) {
+            throw new MissingPricingException("Service type not found: {$serviceTypeCode}");
+        }
+
+        // 2. Find staff profile by email (via users table)
+        $user = User::where('email', $staffEmail)->first();
+        if (!$user) {
+            // Return service type defaults if no user found
+            return $this->formatServiceTypeDefault($serviceType);
+        }
+
+        $staffProfile = StaffProfile::where('user_id', $user->id)->first();
+        if (!$staffProfile) {
+            return $this->formatServiceTypeDefault($serviceType);
+        }
+
+        // 3. Query staff_price_codes for active, valid price
+        $priceCode = StaffPriceCode::forStaffAndServiceType($staffProfile->id, $serviceType->id)
+            ->active()
+            ->validAt(Carbon::now())
+            ->orderBy('valid_from', 'desc')
+            ->first();
+
+        if ($priceCode) {
+            return [
+                'entry_fee_brutto' => $priceCode->entry_fee_brutto,
+                'trainer_fee_brutto' => $priceCode->trainer_fee_brutto,
+                'currency' => $priceCode->currency,
+                'source' => 'staff_price_code',
+                'price_code' => $priceCode->price_code,
+            ];
+        }
+
+        // 4. Fallback to service type defaults
+        return $this->formatServiceTypeDefault($serviceType);
+    }
+
+    /**
+     * Resolve pricing by staff profile and service type ID.
+     * Used when we already know the staff profile and service type.
+     *
+     * @param int $staffProfileId
+     * @param int $serviceTypeId
+     * @return array{entry_fee_brutto: int, trainer_fee_brutto: int, currency: string, source: string, price_code?: string}
+     * @throws MissingPricingException
+     */
+    public function resolveByStaffAndServiceType(
+        int $staffProfileId,
+        int $serviceTypeId
+    ): array {
+        $serviceType = ServiceType::find($serviceTypeId);
+
+        if (!$serviceType) {
+            throw new MissingPricingException("Service type not found: ID {$serviceTypeId}");
+        }
+
+        // Query staff_price_codes for active, valid price
+        $priceCode = StaffPriceCode::forStaffAndServiceType($staffProfileId, $serviceTypeId)
+            ->active()
+            ->validAt(Carbon::now())
+            ->orderBy('valid_from', 'desc')
+            ->first();
+
+        if ($priceCode) {
+            return [
+                'entry_fee_brutto' => $priceCode->entry_fee_brutto,
+                'trainer_fee_brutto' => $priceCode->trainer_fee_brutto,
+                'currency' => $priceCode->currency,
+                'source' => 'staff_price_code',
+                'price_code' => $priceCode->price_code,
+            ];
+        }
+
+        return $this->formatServiceTypeDefault($serviceType);
+    }
+
+    /**
+     * Generate default price codes for a staff profile on all active service types.
+     * Called during staff profile creation.
+     *
+     * @param StaffProfile $staffProfile
+     * @param int|null $createdBy User ID who created the staff profile
+     * @return void
+     */
+    public function generateDefaultStaffPriceCodes(StaffProfile $staffProfile, ?int $createdBy = null): void
+    {
+        // Get staff email from user
+        $email = $staffProfile->user?->email ?? '';
+
+        if (empty($email)) {
+            return; // Cannot create price codes without email
+        }
+
+        $activeServiceTypes = ServiceType::active()->get();
+
+        foreach ($activeServiceTypes as $serviceType) {
+            // Check if price code already exists for this staff profile and service type
+            $exists = StaffPriceCode::where('staff_profile_id', $staffProfile->id)
+                ->where('service_type_id', $serviceType->id)
+                ->exists();
+
+            if (!$exists) {
+                StaffPriceCode::create([
+                    'staff_profile_id' => $staffProfile->id,
+                    'staff_email' => $email,
+                    'service_type_id' => $serviceType->id,
+                    'entry_fee_brutto' => $serviceType->default_entry_fee_brutto,
+                    'trainer_fee_brutto' => $serviceType->default_trainer_fee_brutto,
+                    'currency' => 'HUF',
+                    'valid_from' => Carbon::now(),
+                    'is_active' => true,
+                    'created_by' => $createdBy,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Generate default price codes for a specific service type for all existing staff profiles.
+     * Called when a new service type is created.
+     *
+     * @param ServiceType $serviceType
+     * @param int|null $createdBy User ID who created the service type
+     * @return int Number of price codes created
+     */
+    public function generatePriceCodesForNewServiceTypeStaff(ServiceType $serviceType, ?int $createdBy = null): int
+    {
+        $count = 0;
+
+        // Get all staff profiles with user accounts (email is available via user)
+        $staffProfiles = StaffProfile::whereHas('user')->with('user')->get();
+
+        foreach ($staffProfiles as $staffProfile) {
+            $email = $staffProfile->user?->email ?? '';
+
+            if (empty($email)) {
+                continue;
+            }
+
+            // Check if price code already exists
+            $exists = StaffPriceCode::where('staff_profile_id', $staffProfile->id)
+                ->where('service_type_id', $serviceType->id)
+                ->exists();
+
+            if (!$exists) {
+                StaffPriceCode::create([
+                    'staff_profile_id' => $staffProfile->id,
+                    'staff_email' => $email,
+                    'service_type_id' => $serviceType->id,
+                    'entry_fee_brutto' => $serviceType->default_entry_fee_brutto,
+                    'trainer_fee_brutto' => $serviceType->default_trainer_fee_brutto,
+                    'currency' => 'HUF',
+                    'valid_from' => Carbon::now(),
+                    'is_active' => true,
+                    'created_by' => $createdBy,
+                ]);
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
+    /**
+     * Update staff email in all their price codes.
+     * Called when a user's email changes.
+     *
+     * @param StaffProfile $staffProfile
+     * @param string $newEmail
+     * @return void
+     */
+    public function updateStaffEmail(StaffProfile $staffProfile, string $newEmail): void
+    {
+        StaffPriceCode::where('staff_profile_id', $staffProfile->id)
+            ->update(['staff_email' => $newEmail]);
     }
 
     /**

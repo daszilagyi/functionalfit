@@ -148,6 +148,7 @@ use App\Http\Controllers\Api\Staff\StaffParticipantController;
 use App\Http\Controllers\Api\WebhookController;
 use App\Http\Controllers\Api\ServiceTypeController;
 use App\Http\Controllers\Api\ClientPriceCodeController;
+use App\Http\Controllers\Api\StaffPriceCodeController;
 use App\Http\Controllers\Api\PricingResolveController;
 use App\Http\Controllers\Api\Admin\AdminReportController;
 use App\Http\Controllers\Api\Staff\StaffReportController;
@@ -299,6 +300,13 @@ Route::prefix('v1')->group(function () {
             Route::delete('/client-price-codes/{clientPriceCode}', [ClientPriceCodeController::class, 'destroy']);
             Route::patch('/client-price-codes/{clientPriceCode}/toggle-active', [ClientPriceCodeController::class, 'toggleActive']);
 
+            // Staff price codes (staff can manage price codes for staff members)
+            Route::get('/staff-profiles/{staffProfile}/price-codes', [StaffPriceCodeController::class, 'index']);
+            Route::post('/staff-profiles/{staffProfile}/price-codes', [StaffPriceCodeController::class, 'store']);
+            Route::patch('/staff-price-codes/{staffPriceCode}', [StaffPriceCodeController::class, 'update']);
+            Route::delete('/staff-price-codes/{staffPriceCode}', [StaffPriceCodeController::class, 'destroy']);
+            Route::patch('/staff-price-codes/{staffPriceCode}/toggle-active', [StaffPriceCodeController::class, 'toggleActive']);
+
             // Exports (legacy)
             Route::get('/exports/payout', [StaffExportController::class, 'payout']);
             Route::get('/exports/attendance', [StaffExportController::class, 'attendance']);
@@ -435,6 +443,13 @@ Route::prefix('v1')->group(function () {
             Route::patch('client-price-codes/{clientPriceCode}', [ClientPriceCodeController::class, 'update']);
             Route::delete('client-price-codes/{clientPriceCode}', [ClientPriceCodeController::class, 'destroy']);
             Route::patch('client-price-codes/{clientPriceCode}/toggle-active', [ClientPriceCodeController::class, 'toggleActive']);
+
+            // Staff Price Codes management
+            Route::get('staff-profiles/{staffProfile}/price-codes', [StaffPriceCodeController::class, 'index']);
+            Route::post('staff-profiles/{staffProfile}/price-codes', [StaffPriceCodeController::class, 'store']);
+            Route::patch('staff-price-codes/{staffPriceCode}', [StaffPriceCodeController::class, 'update']);
+            Route::delete('staff-price-codes/{staffPriceCode}', [StaffPriceCodeController::class, 'destroy']);
+            Route::patch('staff-price-codes/{staffPriceCode}/toggle-active', [StaffPriceCodeController::class, 'toggleActive']);
 
             // Client CSV Import
             Route::post('clients/import', [App\Http\Controllers\Api\Admin\ClientImportController::class, 'import']);
