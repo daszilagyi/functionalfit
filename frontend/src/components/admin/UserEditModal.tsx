@@ -1,9 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { AlertTriangle } from 'lucide-react'
 import { usersApi, adminKeys } from '@/api/admin'
 import {
   Dialog,
@@ -36,6 +37,9 @@ const userEditSchema = z.object({
   email: z.string().email('Invalid email address'),
   phone: z.string().optional(),
   status: z.enum(['active', 'inactive', 'suspended']),
+  role: z.enum(['client', 'staff', 'admin']),
+  password: z.string().min(8, 'Password must be at least 8 characters').optional().or(z.literal('')),
+  password_confirmation: z.string().optional().or(z.literal('')),
   // Client-specific
   date_of_birth: z.string().optional(),
   emergency_contact_name: z.string().optional(),
@@ -47,6 +51,14 @@ const userEditSchema = z.object({
   default_hourly_rate: z.number().optional(),
   is_available_for_booking: z.boolean().optional(),
   daily_schedule_notification: z.boolean().optional(),
+}).refine((data) => {
+  if (data.password && data.password !== data.password_confirmation) {
+    return false
+  }
+  return true
+}, {
+  message: "Passwords don't match",
+  path: ["password_confirmation"],
 })
 
 type UserEditFormData = z.infer<typeof userEditSchema>
@@ -67,6 +79,7 @@ export function UserEditModal({
   const { t } = useTranslation(['admin', 'common'])
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const [showPasswordSection, setShowPasswordSection] = useState(false)
 
   const form = useForm<UserEditFormData>({
     resolver: zodResolver(userEditSchema),
@@ -75,6 +88,9 @@ export function UserEditModal({
       email: '',
       phone: '',
       status: 'active',
+      role: 'client',
+      password: '',
+      password_confirmation: '',
       date_of_birth: '',
       emergency_contact_name: '',
       emergency_contact_phone: '',
@@ -95,6 +111,9 @@ export function UserEditModal({
         email: user.email,
         phone: user.phone || '',
         status: user.status,
+        role: user.role,
+        password: '',
+        password_confirmation: '',
         // Client fields
         date_of_birth: user.client?.date_of_birth?.split('T')[0]?.split(' ')[0] || '',
         emergency_contact_name: user.client?.emergency_contact_name || '',
@@ -109,6 +128,7 @@ export function UserEditModal({
         daily_schedule_notification:
           user.staff_profile?.daily_schedule_notification ?? false,
       })
+      setShowPasswordSection(false)
     }
   }, [user, open, form])
 
@@ -142,13 +162,24 @@ export function UserEditModal({
       status: data.status,
     }
 
-    // Add role-specific fields
-    if (user?.role === 'client') {
+    // Include role if it changed
+    if (data.role !== user?.role) {
+      updateData.role = data.role
+    }
+
+    // Include password only if provided
+    if (data.password && data.password.trim() !== '') {
+      updateData.password = data.password
+    }
+
+    // Add role-specific fields based on the new role (or current role if unchanged)
+    const targetRole = data.role
+    if (targetRole === 'client') {
       updateData.date_of_birth = data.date_of_birth || undefined
       updateData.emergency_contact_name = data.emergency_contact_name || undefined
       updateData.emergency_contact_phone = data.emergency_contact_phone || undefined
       updateData.notes = data.notes || undefined
-    } else if (user?.role === 'staff' || user?.role === 'admin') {
+    } else if (targetRole === 'staff' || targetRole === 'admin') {
       updateData.specialization = data.specialization || undefined
       updateData.bio = data.bio || undefined
       updateData.default_hourly_rate = data.default_hourly_rate
@@ -236,10 +267,101 @@ export function UserEditModal({
             </SelectContent>
           </Select>
         </div>
+
+        <div className="grid gap-2">
+          <Label htmlFor="role">{t('admin:users.roleLabel', 'Role')}</Label>
+          <Select
+            value={form.watch('role')}
+            onValueChange={(value: 'client' | 'staff' | 'admin') =>
+              form.setValue('role', value)
+            }
+            disabled={updateMutation.isPending}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="client">
+                {t('admin:users.role.client', 'Client')}
+              </SelectItem>
+              <SelectItem value="staff">
+                {t('admin:users.role.staff', 'Staff')}
+              </SelectItem>
+              <SelectItem value="admin">
+                {t('admin:users.role.admin', 'Admin')}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          {form.watch('role') !== user?.role && (
+            <div className="flex items-start gap-2 text-sm text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/20 p-3 rounded-md">
+              <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <span>{t('admin:users.roleChangeWarning', 'Changing the role will affect the user\'s permissions and access.')}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Password Change Section */}
+      <div className="border-t pt-4">
+        <div className="flex items-center space-x-2 mb-4">
+          <Checkbox
+            id="change-password"
+            checked={showPasswordSection}
+            onCheckedChange={(checked) => {
+              setShowPasswordSection(checked === true)
+              if (!checked) {
+                form.setValue('password', '')
+                form.setValue('password_confirmation', '')
+              }
+            }}
+            disabled={updateMutation.isPending}
+          />
+          <Label
+            htmlFor="change-password"
+            className="text-sm font-medium cursor-pointer"
+          >
+            {t('admin:users.changePassword', 'Change Password')}
+          </Label>
+        </div>
+
+        {showPasswordSection && (
+          <div className="grid gap-4 pl-6">
+            <div className="grid gap-2">
+              <Label htmlFor="password">{t('admin:users.newPassword', 'New Password')}</Label>
+              <Input
+                id="password"
+                type="password"
+                {...form.register('password')}
+                disabled={updateMutation.isPending}
+                placeholder={t('admin:users.passwordOptional', 'Leave empty to keep unchanged')}
+              />
+              {form.formState.errors.password && (
+                <span className="text-sm text-red-500">
+                  {t(form.formState.errors.password.message || 'admin:users.passwordMinLength', 'Password must be at least 8 characters')}
+                </span>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="password_confirmation">{t('admin:users.confirmPassword', 'Confirm Password')}</Label>
+              <Input
+                id="password_confirmation"
+                type="password"
+                {...form.register('password_confirmation')}
+                disabled={updateMutation.isPending}
+              />
+              {form.formState.errors.password_confirmation && (
+                <span className="text-sm text-red-500">
+                  {t(form.formState.errors.password_confirmation.message || 'admin:users.passwordMismatch', 'Passwords don\'t match')}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Client-specific fields */}
-      {user.role === 'client' && (
+      {form.watch('role') === 'client' && (
         <div className="grid gap-4 border-t pt-4">
           <h4 className="font-medium text-sm text-muted-foreground">
             {t('admin:users.clientDetails', 'Client Details')}
@@ -291,7 +413,7 @@ export function UserEditModal({
       )}
 
       {/* Staff-specific fields */}
-      {(user.role === 'staff' || user.role === 'admin') && (
+      {(form.watch('role') === 'staff' || form.watch('role') === 'admin') && (
         <div className="grid gap-4 border-t pt-4">
           <h4 className="font-medium text-sm text-muted-foreground">
             {t('admin:users.staffDetails', 'Staff Details')}

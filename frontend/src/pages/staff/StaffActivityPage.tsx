@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/useAuth'
@@ -7,39 +7,59 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Calendar, Clock, TrendingUp, Users, CheckCircle2, AlertCircle } from 'lucide-react'
-import { format, parseISO, startOfWeek, endOfWeek, addWeeks, isFuture, isPast, startOfMonth, endOfMonth, differenceInMinutes } from 'date-fns'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/hooks/use-toast'
+import { Calendar, Clock, TrendingUp, Users, CheckCircle2, AlertCircle, FileDown, Search, Loader2 } from 'lucide-react'
+import { format, parseISO, addWeeks, isFuture, isPast, startOfMonth, differenceInMinutes } from 'date-fns'
 import { hu, enUS } from 'date-fns/locale'
 
 export default function StaffActivityPage() {
   const { t, i18n } = useTranslation(['staff', 'common'])
   const { user } = useAuth()
+  const { toast } = useToast()
   const [activeTab, setActiveTab] = useState('upcoming')
+  const [exporting, setExporting] = useState(false)
 
   const locale = i18n.language === 'hu' ? hu : enUS
 
-  // Calculate date ranges
+  // Date filter state
   const now = new Date()
-  const weekStart = startOfWeek(now, { weekStartsOn: 1 })
-  const nextWeekEnd = endOfWeek(addWeeks(now, 1), { weekStartsOn: 1 })
-  const monthStart = startOfMonth(now)
-  const monthEnd = endOfMonth(now)
+  const defaultDateFrom = format(startOfMonth(now), 'yyyy-MM-dd')
+  const defaultDateTo = format(addWeeks(now, 2), 'yyyy-MM-dd')
 
-  // Fetch all events for the month (for stats calculation)
-  const { data: monthEvents, isLoading: monthLoading } = useQuery({
-    queryKey: staffKeys.myEvents(format(monthStart, 'yyyy-MM-dd'), format(monthEnd, 'yyyy-MM-dd')),
-    queryFn: () => staffApi.getMyEvents(format(monthStart, 'yyyy-MM-dd'), format(monthEnd, 'yyyy-MM-dd')),
+  const [dateFrom, setDateFrom] = useState(defaultDateFrom)
+  const [dateTo, setDateTo] = useState(defaultDateTo)
+
+  // Client search with debounce
+  const [clientSearchInput, setClientSearchInput] = useState('')
+  const [clientSearch, setClientSearch] = useState('')
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current)
+    }
+    debounceRef.current = setTimeout(() => {
+      setClientSearch(clientSearchInput)
+    }, 300)
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current)
+      }
+    }
+  }, [clientSearchInput])
+
+  // Single query for the full date range
+  const { data: allEvents, isLoading } = useQuery({
+    queryKey: staffKeys.myEvents(dateFrom, dateTo, clientSearch || undefined),
+    queryFn: () => staffApi.getMyEvents(dateFrom, dateTo, clientSearch || undefined),
+    placeholderData: (prev) => prev,
   })
 
-  // Fetch upcoming events (current week + next week)
-  const { data: upcomingEvents, isLoading: upcomingLoading } = useQuery({
-    queryKey: staffKeys.myEvents(format(weekStart, 'yyyy-MM-dd'), format(nextWeekEnd, 'yyyy-MM-dd')),
-    queryFn: () => staffApi.getMyEvents(format(weekStart, 'yyyy-MM-dd'), format(nextWeekEnd, 'yyyy-MM-dd')),
-  })
-
-  // Calculate stats from month events
+  // Calculate stats from all events
   const stats = useMemo(() => {
-    if (!monthEvents || monthEvents.length === 0) {
+    if (!allEvents || allEvents.length === 0) {
       return {
         totalEvents: 0,
         totalHours: 0,
@@ -48,11 +68,9 @@ export default function StaffActivityPage() {
       }
     }
 
-    // Total events
-    const totalEvents = monthEvents.length
+    const totalEvents = allEvents.length
 
-    // Total hours
-    const totalHours = monthEvents.reduce((acc, event) => {
+    const totalHours = allEvents.reduce((acc, event) => {
       try {
         const start = parseISO(event.starts_at)
         const end = parseISO(event.ends_at)
@@ -62,9 +80,8 @@ export default function StaffActivityPage() {
       }
     }, 0)
 
-    // Unique clients
     const clientIds = new Set<number>()
-    monthEvents.forEach(event => {
+    allEvents.forEach(event => {
       if (event.client?.id) {
         clientIds.add(event.client.id)
       }
@@ -76,13 +93,11 @@ export default function StaffActivityPage() {
     })
     const totalClients = clientIds.size
 
-    // Attendance rate (from past events only)
-    const pastMonthEvents = monthEvents.filter(event => isPast(parseISO(event.starts_at)))
-    const attendedEvents = pastMonthEvents.filter(event =>
+    const pastEvents = allEvents.filter(event => isPast(parseISO(event.starts_at)))
+    const attendedEvents = pastEvents.filter(event =>
       event.status === 'completed' || event.status === 'attended'
     ).length
-    const totalPastEvents = pastMonthEvents.length
-    const attendanceRate = totalPastEvents > 0 ? (attendedEvents / totalPastEvents) * 100 : 0
+    const attendanceRate = pastEvents.length > 0 ? (attendedEvents / pastEvents.length) * 100 : 0
 
     return {
       totalEvents,
@@ -90,23 +105,23 @@ export default function StaffActivityPage() {
       totalClients,
       attendanceRate,
     }
-  }, [monthEvents])
+  }, [allEvents])
 
-  // Filter future events
+  // Filter future events for upcoming tab
   const futureEvents = useMemo(() => {
-    if (!upcomingEvents) return []
-    return upcomingEvents
+    if (!allEvents) return []
+    return allEvents
       .filter(event => isFuture(parseISO(event.starts_at)) || parseISO(event.starts_at) > new Date())
       .sort((a, b) => parseISO(a.starts_at).getTime() - parseISO(b.starts_at).getTime())
-  }, [upcomingEvents])
+  }, [allEvents])
 
-  // Filter past events for history (from month events)
+  // Filter past events for history tab
   const historyEvents = useMemo(() => {
-    if (!monthEvents) return []
-    return monthEvents
+    if (!allEvents) return []
+    return allEvents
       .filter(event => isPast(parseISO(event.starts_at)))
       .sort((a, b) => parseISO(b.starts_at).getTime() - parseISO(a.starts_at).getTime())
-  }, [monthEvents])
+  }, [allEvents])
 
   const formatDateTime = (dateStr: string) => {
     try {
@@ -149,7 +164,37 @@ export default function StaffActivityPage() {
     return <Badge variant={config.variant}>{config.label}</Badge>
   }
 
-  const isLoading = monthLoading || upcomingLoading
+  const handleExport = useCallback(async () => {
+    setExporting(true)
+    try {
+      const blob = await staffApi.downloadActivityXlsx(
+        dateFrom,
+        dateTo,
+        clientSearch || undefined,
+        activeTab === 'upcoming' || activeTab === 'history' ? activeTab : undefined
+      )
+
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `aktivitas_${dateFrom}_${dateTo}.xlsx`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      toast({
+        title: t('activity.filter.exportSuccess'),
+      })
+    } catch {
+      toast({
+        title: t('activity.filter.exportFailed'),
+        variant: 'destructive',
+      })
+    } finally {
+      setExporting(false)
+    }
+  }, [dateFrom, dateTo, clientSearch, activeTab, toast, t])
 
   return (
     <div className="space-y-6">
@@ -159,6 +204,53 @@ export default function StaffActivityPage() {
         <p className="text-gray-500 mt-2">
           {t('activity.subtitle')} - {user?.name}
         </p>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700">{t('activity.filter.dateFrom')}</label>
+          <Input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="w-40"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700">{t('activity.filter.dateTo')}</label>
+          <Input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="w-40"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700">{t('activity.filter.clientSearch')}</label>
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder={t('activity.filter.clientSearch')}
+              value={clientSearchInput}
+              onChange={(e) => setClientSearchInput(e.target.value)}
+              className="w-56 pl-8"
+            />
+          </div>
+        </div>
+        <Button
+          variant="outline"
+          onClick={handleExport}
+          disabled={exporting}
+        >
+          {exporting ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <FileDown className="h-4 w-4 mr-2" />
+          )}
+          {exporting ? t('activity.filter.exporting') : t('activity.filter.exportExcel')}
+        </Button>
       </div>
 
       {/* Summary Stats */}
@@ -247,7 +339,7 @@ export default function StaffActivityPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {upcomingLoading ? (
+              {isLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
                     <Skeleton key={i} className="h-20 w-full" />
@@ -306,7 +398,7 @@ export default function StaffActivityPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {monthLoading ? (
+              {isLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3, 4, 5].map((i) => (
                     <Skeleton key={i} className="h-16 w-full" />

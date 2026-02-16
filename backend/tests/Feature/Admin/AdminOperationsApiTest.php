@@ -380,4 +380,282 @@ class AdminOperationsApiTest extends TestCase
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['title', 'duration_min', 'capacity']);
     }
+
+    /**
+     * Test admin can update user password
+     */
+    public function test_admin_can_update_user_password(): void
+    {
+        // Arrange
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create([
+            'role' => 'client',
+            'password' => \Illuminate\Support\Facades\Hash::make('old_password'),
+        ]);
+        \App\Models\Client::factory()->create(['user_id' => $user->id]);
+
+        $updateData = [
+            'password' => 'new_secure_password_123',
+        ];
+
+        // Act
+        Sanctum::actingAs($admin);
+        $response = $this->patchJson("/api/v1/admin/users/{$user->id}", $updateData);
+
+        // Assert
+        $response->assertOk();
+        $user->refresh();
+
+        // Verify password was hashed and updated
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('new_secure_password_123', $user->password));
+        $this->assertFalse(\Illuminate\Support\Facades\Hash::check('old_password', $user->password));
+    }
+
+    /**
+     * Test admin can change user role from client to staff and creates StaffProfile
+     */
+    public function test_admin_can_change_client_to_staff_creates_staff_profile(): void
+    {
+        // Arrange
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create(['role' => 'client']);
+        $client = \App\Models\Client::factory()->create(['user_id' => $user->id]);
+
+        // Verify user has no staff profile initially
+        $this->assertNull($user->fresh()->staffProfile);
+
+        $updateData = [
+            'role' => 'staff',
+            'specialization' => 'Personal Training',
+            'default_hourly_rate' => 5000.00,
+            'is_available_for_booking' => true,
+        ];
+
+        // Act
+        Sanctum::actingAs($admin);
+        $response = $this->patchJson("/api/v1/admin/users/{$user->id}", $updateData);
+
+        // Assert
+        $response->assertOk();
+        $user->refresh();
+
+        // Verify role changed
+        $this->assertEquals('staff', $user->role);
+
+        // Verify StaffProfile was created
+        $this->assertNotNull($user->staffProfile);
+        $this->assertEquals('Personal Training', $user->staffProfile->specialization);
+        $this->assertEquals(5000.00, $user->staffProfile->default_hourly_rate);
+        $this->assertTrue($user->staffProfile->is_available_for_booking);
+
+        // Verify old Client profile still exists (not deleted)
+        $this->assertDatabaseHas('clients', [
+            'id' => $client->id,
+            'user_id' => $user->id,
+        ]);
+    }
+
+    /**
+     * Test admin can change user role from client to admin and creates StaffProfile
+     */
+    public function test_admin_can_change_client_to_admin_creates_staff_profile(): void
+    {
+        // Arrange
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create(['role' => 'client']);
+        \App\Models\Client::factory()->create(['user_id' => $user->id]);
+
+        $updateData = [
+            'role' => 'admin',
+            'bio' => 'System Administrator',
+        ];
+
+        // Act
+        Sanctum::actingAs($admin);
+        $response = $this->patchJson("/api/v1/admin/users/{$user->id}", $updateData);
+
+        // Assert
+        $response->assertOk();
+        $user->refresh();
+
+        $this->assertEquals('admin', $user->role);
+        $this->assertNotNull($user->staffProfile);
+        $this->assertEquals('System Administrator', $user->staffProfile->bio);
+    }
+
+    /**
+     * Test admin can change user role from staff to client and creates Client
+     */
+    public function test_admin_can_change_staff_to_client_creates_client(): void
+    {
+        // Arrange
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create(['role' => 'staff', 'name' => 'John Doe']);
+        $staffProfile = \App\Models\StaffProfile::factory()->create(['user_id' => $user->id]);
+
+        // Verify user has no client profile initially
+        $this->assertNull($user->fresh()->client);
+
+        $updateData = [
+            'role' => 'client',
+            'date_of_birth' => '1990-05-15',
+            'emergency_contact_name' => 'Jane Doe',
+            'emergency_contact_phone' => '+36301234567',
+        ];
+
+        // Act
+        Sanctum::actingAs($admin);
+        $response = $this->patchJson("/api/v1/admin/users/{$user->id}", $updateData);
+
+        // Assert
+        $response->assertOk();
+        $user->refresh();
+
+        // Verify role changed
+        $this->assertEquals('client', $user->role);
+
+        // Verify Client was created with user's name
+        $this->assertNotNull($user->client);
+        $this->assertEquals('John Doe', $user->client->full_name);
+        $this->assertEquals('1990-05-15', $user->client->date_of_birth->format('Y-m-d'));
+        $this->assertEquals('Jane Doe', $user->client->emergency_contact_name);
+        $this->assertEquals('+36301234567', $user->client->emergency_contact_phone);
+
+        // Verify old StaffProfile still exists (not deleted)
+        $this->assertDatabaseHas('staff_profiles', [
+            'id' => $staffProfile->id,
+            'user_id' => $user->id,
+        ]);
+    }
+
+    /**
+     * Test admin can change user role from admin to client and creates Client
+     */
+    public function test_admin_can_change_admin_to_client_creates_client(): void
+    {
+        // Arrange
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create(['role' => 'admin', 'name' => 'Admin User']);
+        \App\Models\StaffProfile::factory()->create(['user_id' => $user->id]);
+
+        $updateData = [
+            'role' => 'client',
+            'notes' => 'Former admin',
+        ];
+
+        // Act
+        Sanctum::actingAs($admin);
+        $response = $this->patchJson("/api/v1/admin/users/{$user->id}", $updateData);
+
+        // Assert
+        $response->assertOk();
+        $user->refresh();
+
+        $this->assertEquals('client', $user->role);
+        $this->assertNotNull($user->client);
+        $this->assertEquals('Admin User', $user->client->full_name);
+        $this->assertEquals('Former admin', $user->client->notes);
+    }
+
+    /**
+     * Test role change doesn't create duplicate profiles
+     */
+    public function test_role_change_does_not_create_duplicate_profiles(): void
+    {
+        // Arrange
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create(['role' => 'staff', 'name' => 'Test User']);
+
+        // Create both profiles manually (edge case)
+        $existingStaffProfile = \App\Models\StaffProfile::factory()->create(['user_id' => $user->id]);
+        $existingClient = \App\Models\Client::factory()->create(['user_id' => $user->id]);
+
+        $updateData = [
+            'role' => 'client',
+        ];
+
+        // Act
+        Sanctum::actingAs($admin);
+        $response = $this->patchJson("/api/v1/admin/users/{$user->id}", $updateData);
+
+        // Assert
+        $response->assertOk();
+
+        // Verify only one Client record exists for this user
+        $clientCount = \App\Models\Client::where('user_id', $user->id)->count();
+        $this->assertEquals(1, $clientCount);
+
+        // Verify it's the existing one
+        $this->assertDatabaseHas('clients', [
+            'id' => $existingClient->id,
+            'user_id' => $user->id,
+        ]);
+    }
+
+    /**
+     * Test role change with password update works correctly
+     */
+    public function test_role_change_and_password_update_together(): void
+    {
+        // Arrange
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create([
+            'role' => 'client',
+            'password' => \Illuminate\Support\Facades\Hash::make('old_password'),
+        ]);
+        \App\Models\Client::factory()->create(['user_id' => $user->id]);
+
+        $updateData = [
+            'role' => 'staff',
+            'password' => 'new_password_123',
+            'specialization' => 'Yoga Instructor',
+        ];
+
+        // Act
+        Sanctum::actingAs($admin);
+        $response = $this->patchJson("/api/v1/admin/users/{$user->id}", $updateData);
+
+        // Assert
+        $response->assertOk();
+        $user->refresh();
+
+        // Verify role changed
+        $this->assertEquals('staff', $user->role);
+
+        // Verify password was updated and hashed
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('new_password_123', $user->password));
+
+        // Verify StaffProfile was created
+        $this->assertNotNull($user->staffProfile);
+        $this->assertEquals('Yoga Instructor', $user->staffProfile->specialization);
+    }
+
+    /**
+     * Test staff profile gets default values when created from role change
+     */
+    public function test_staff_profile_uses_defaults_on_role_change(): void
+    {
+        // Arrange
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create(['role' => 'client']);
+        \App\Models\Client::factory()->create(['user_id' => $user->id]);
+
+        // Change role without providing staff-specific fields
+        $updateData = [
+            'role' => 'staff',
+        ];
+
+        // Act
+        Sanctum::actingAs($admin);
+        $response = $this->patchJson("/api/v1/admin/users/{$user->id}", $updateData);
+
+        // Assert
+        $response->assertOk();
+        $user->refresh();
+
+        // Verify StaffProfile was created with default values
+        $this->assertNotNull($user->staffProfile);
+        $this->assertFalse($user->staffProfile->is_available_for_booking); // Should default to false
+        $this->assertFalse($user->staffProfile->daily_schedule_notification); // Should default to false
+    }
 }

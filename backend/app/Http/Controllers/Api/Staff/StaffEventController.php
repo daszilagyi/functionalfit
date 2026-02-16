@@ -60,6 +60,18 @@ class StaffEventController extends Controller
             $query->whereRaw('1 = 0');
         }
 
+        // Filter by client name if provided
+        if ($request->filled('client_search')) {
+            $search = $request->input('client_search');
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('client.user', function ($sub) use ($search) {
+                    $sub->where('name', 'LIKE', "%{$search}%");
+                })->orWhereHas('additionalClients.user', function ($sub) use ($search) {
+                    $sub->where('name', 'LIKE', "%{$search}%");
+                });
+            });
+        }
+
         return ApiResponse::success($query->get());
     }
 

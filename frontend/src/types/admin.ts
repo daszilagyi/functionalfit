@@ -62,6 +62,8 @@ export interface UpdateUserRequest {
   email?: string
   phone?: string
   status?: 'active' | 'inactive' | 'suspended'
+  role?: 'client' | 'staff' | 'admin'
+  password?: string
   // Client-specific fields
   date_of_birth?: string
   emergency_contact_name?: string

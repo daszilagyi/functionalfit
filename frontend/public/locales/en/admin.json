@@ -76,7 +76,16 @@
     "deleteConfirmTitle": "Delete User",
     "deleteConfirmMessage": "Are you sure you want to delete {{name}}? This action cannot be undone.",
     "deleteSuccess": "User deleted successfully",
-    "deleteFailed": "Failed to delete user"
+    "deleteFailed": "Failed to delete user",
+    "roleLabel": "Role",
+    "changeRole": "Change Role",
+    "roleChangeWarning": "Changing the role will affect the user's permissions and access.",
+    "changePassword": "Change Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password",
+    "passwordOptional": "Leave empty to keep unchanged",
+    "passwordMismatch": "Passwords don't match",
+    "passwordMinLength": "Password must be at least 8 characters"
   },
   "rooms": {
     "title": "Room Management",

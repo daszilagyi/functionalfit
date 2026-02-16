@@ -140,9 +140,28 @@ class UserController extends Controller
         $user = User::with(['staffProfile', 'client'])->findOrFail($id);
 
         return DB::transaction(function () use ($request, $user) {
-            $user->update($request->validated());
+            // Store the original role before update
+            $originalRole = $user->role;
 
-            // Update role-specific profile
+            // Prepare update data
+            $updateData = $request->validated();
+
+            // Explicitly hash password if provided (defensive, even though 'hashed' cast should handle it)
+            if ($request->has('password')) {
+                $updateData['password'] = Hash::make($request->input('password'));
+            }
+
+            // Update user
+            $user->update($updateData);
+
+            // Detect role change and create appropriate profile records
+            $newRole = $request->input('role', $originalRole);
+
+            if ($newRole !== $originalRole) {
+                $this->handleRoleChange($user, $originalRole, $newRole, $request);
+            }
+
+            // Update role-specific profile fields (if profile already exists)
             $clientFields = ['date_of_birth', 'emergency_contact_name', 'emergency_contact_phone', 'notes'];
             if ($user->client && $request->hasAny($clientFields)) {
                 $user->client->update($request->only($clientFields));
@@ -155,6 +174,46 @@ class UserController extends Controller
 
             return ApiResponse::success($user->fresh(['staffProfile', 'client']), 'User updated');
         });
+    }
+
+    /**
+     * Handle role change by creating appropriate profile records
+     *
+     * @param User $user
+     * @param string $originalRole
+     * @param string $newRole
+     * @param UpdateUserRequest $request
+     * @return void
+     */
+    private function handleRoleChange(User $user, string $originalRole, string $newRole, UpdateUserRequest $request): void
+    {
+        // Changing FROM client TO staff/admin - create StaffProfile if doesn't exist
+        if ($originalRole === 'client' && in_array($newRole, ['staff', 'admin'])) {
+            if (!$user->staffProfile) {
+                StaffProfile::create([
+                    'user_id' => $user->id,
+                    'specialization' => $request->input('specialization'),
+                    'bio' => $request->input('bio'),
+                    'default_hourly_rate' => $request->input('default_hourly_rate'),
+                    'is_available_for_booking' => $request->boolean('is_available_for_booking', false),
+                    'daily_schedule_notification' => $request->boolean('daily_schedule_notification', false),
+                ]);
+            }
+        }
+
+        // Changing FROM staff/admin TO client - create Client if doesn't exist
+        if (in_array($originalRole, ['staff', 'admin']) && $newRole === 'client') {
+            if (!$user->client) {
+                Client::create([
+                    'user_id' => $user->id,
+                    'full_name' => $user->name,
+                    'date_of_birth' => $request->input('date_of_birth'),
+                    'emergency_contact_name' => $request->input('emergency_contact_name'),
+                    'emergency_contact_phone' => $request->input('emergency_contact_phone'),
+                    'notes' => $request->input('notes'),
+                ]);
+            }
+        }
     }
 
     /**

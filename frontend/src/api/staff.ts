@@ -118,14 +118,34 @@ export const staffApi = {
   /**
    * Get staff member's personal events (my-events)
    */
-  getMyEvents: async (dateFrom?: string, dateTo?: string): Promise<StaffEvent[]> => {
+  getMyEvents: async (dateFrom?: string, dateTo?: string, clientSearch?: string): Promise<StaffEvent[]> => {
+    const params: Record<string, string | undefined> = { date_from: dateFrom, date_to: dateTo }
+    if (clientSearch) {
+      params.client_search = clientSearch
+    }
     const response = await apiClient.get<ApiResponse<StaffEvent[]>>(
       '/staff/my-events',
-      {
-        params: { date_from: dateFrom, date_to: dateTo },
-      }
+      { params }
     )
     return response.data.data
+  },
+
+  /**
+   * Download activity list as XLSX
+   */
+  downloadActivityXlsx: async (dateFrom: string, dateTo: string, clientSearch?: string, tab?: string): Promise<Blob> => {
+    const params: Record<string, string> = { date_from: dateFrom, date_to: dateTo }
+    if (clientSearch) {
+      params.client_search = clientSearch
+    }
+    if (tab) {
+      params.tab = tab
+    }
+    const response = await apiClient.get('/staff/exports/activity', {
+      params,
+      responseType: 'blob',
+    })
+    return response.data
   },
 
   /**
@@ -155,8 +175,8 @@ export const staffKeys = {
     [...staffKeys.exports(), 'payout', dateFrom, dateTo] as const,
   attendance: (dateFrom: string, dateTo: string) =>
     [...staffKeys.exports(), 'attendance', dateFrom, dateTo] as const,
-  myEvents: (dateFrom?: string, dateTo?: string) =>
-    [...staffKeys.all, 'my-events', dateFrom, dateTo] as const,
+  myEvents: (dateFrom?: string, dateTo?: string, clientSearch?: string) =>
+    [...staffKeys.all, 'my-events', dateFrom, dateTo, clientSearch] as const,
   mySummary: (params: StaffMySummaryParams) =>
     [...staffKeys.all, 'my-summary', params] as const,
 }

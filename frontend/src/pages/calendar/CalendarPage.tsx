@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { format } from 'date-fns'
 import { hu, enUS } from 'date-fns/locale'
@@ -95,7 +95,7 @@ export default function CalendarPage() {
   })
 
   // Fetch events (admin gets all events, staff gets all events to view but can only edit their own)
-  const { data: events, isLoading: isLoadingEvents } = useQuery({
+  const { data: events } = useQuery({
     queryKey: isAdmin
       ? eventKeys.allEvents({
           date_from: dateRange.start.toISOString(),
@@ -119,10 +119,11 @@ export default function CalendarPage() {
           room_id: selectedRoomId || undefined,
         }),
     staleTime: 2 * 60 * 1000, // 2 minutes
+    placeholderData: keepPreviousData,
   })
 
   // Fetch group classes
-  const { data: groupClasses, isLoading: isLoadingClasses } = useQuery({
+  const { data: groupClasses } = useQuery({
     queryKey: classKeys.list({
       date_from: dateRange.start.toISOString(),
       date_to: dateRange.end.toISOString(),
@@ -137,9 +138,10 @@ export default function CalendarPage() {
     }),
     staleTime: 2 * 60 * 1000, // 2 minutes
     enabled: showGroupClasses,
+    placeholderData: keepPreviousData,
   })
 
-  const isLoading = isLoadingRooms || isLoadingEvents || isLoadingClasses
+  const isLoading = isLoadingRooms
 
   // Update event mutation (for drag & drop)
   const updateMutation = useMutation({

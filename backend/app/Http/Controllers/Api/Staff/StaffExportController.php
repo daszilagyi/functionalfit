@@ -318,6 +318,123 @@ class StaffExportController extends Controller
     }
 
     /**
+     * Generate staff activity export (XLSX)
+     *
+     * GET /api/staff/exports/activity
+     * Query params: date_from, date_to, client_search (optional), tab (upcoming|history|all)
+     */
+    public function activityExport(Request $request): StreamedResponse
+    {
+        $validated = $request->validate([
+            'date_from' => ['required', 'date'],
+            'date_to' => ['required', 'date', 'after_or_equal:date_from'],
+            'client_search' => ['sometimes', 'string', 'max:255'],
+            'tab' => ['sometimes', 'in:upcoming,history,all'],
+        ]);
+
+        $staff = $request->user()->staffProfile;
+
+        if (!$staff) {
+            abort(403, 'Only staff can access activity exports');
+        }
+
+        $dateFrom = \Carbon\Carbon::parse($validated['date_from'])->startOfDay();
+        $dateTo = \Carbon\Carbon::parse($validated['date_to'])->endOfDay();
+        $tab = $validated['tab'] ?? 'all';
+
+        $query = Event::with(['client.user', 'additionalClients.user', 'room'])
+            ->where('staff_id', $staff->id)
+            ->whereBetween('starts_at', [$dateFrom, $dateTo])
+            ->orderBy('starts_at');
+
+        // Filter by tab (upcoming = future, history = past)
+        if ($tab === 'upcoming') {
+            $query->where('starts_at', '>=', now());
+        } elseif ($tab === 'history') {
+            $query->where('starts_at', '<', now());
+        }
+
+        // Filter by client name if provided
+        if (!empty($validated['client_search'])) {
+            $search = $validated['client_search'];
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('client.user', function ($sub) use ($search) {
+                    $sub->where('name', 'LIKE', "%{$search}%");
+                })->orWhereHas('additionalClients.user', function ($sub) use ($search) {
+                    $sub->where('name', 'LIKE', "%{$search}%");
+                });
+            });
+        }
+
+        $events = $query->get();
+
+        return $this->generateActivityXlsx($events, $validated['date_from'], $validated['date_to']);
+    }
+
+    /**
+     * Generate XLSX file for activity export
+     */
+    private function generateActivityXlsx($events, string $dateFrom, string $dateTo): StreamedResponse
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Aktivitás');
+
+        // Headers
+        $headers = ['Dátum', 'Idő', 'Vendég neve', 'Típus', 'Terem', 'Státusz', 'Időtartam (perc)', 'Megjegyzés'];
+        $col = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($col . '1', $header);
+            $col++;
+        }
+        $sheet->getStyle('A1:H1')->getFont()->setBold(true);
+        $sheet->getStyle('A1:H1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('E0E0E0');
+
+        $row = 2;
+        foreach ($events as $event) {
+            // Collect all client names (main + additional)
+            $clientNames = [];
+            if ($event->client?->user?->name) {
+                $clientNames[] = $event->client->user->name;
+            }
+            foreach ($event->additionalClients ?? [] as $ac) {
+                if ($ac->user?->name) {
+                    $clientNames[] = $ac->user->name;
+                }
+            }
+
+            $duration = $event->starts_at->diffInMinutes($event->ends_at);
+            $typeLabel = $event->type === 'INDIVIDUAL' ? 'Személyi edzés' : 'Csoportos edzés';
+
+            $sheet->setCellValue('A' . $row, $event->starts_at->format('Y-m-d'));
+            $sheet->setCellValue('B' . $row, $event->starts_at->format('H:i') . ' - ' . $event->ends_at->format('H:i'));
+            $sheet->setCellValue('C' . $row, implode(', ', $clientNames) ?: '-');
+            $sheet->setCellValue('D' . $row, $typeLabel);
+            $sheet->setCellValue('E' . $row, $event->room?->name ?? '-');
+            $sheet->setCellValue('F' . $row, $this->translateStatus($event->attendance_status ?? $event->status));
+            $sheet->setCellValue('G' . $row, $duration);
+            $sheet->setCellValue('H' . $row, $event->notes ?? '');
+            $row++;
+        }
+
+        // Auto-size columns
+        foreach (range('A', 'H') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $filename = "aktivitas_{$dateFrom}_{$dateTo}.xlsx";
+
+        return new StreamedResponse(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
+
+    /**
      * Get staff's attendance report
      *
      * GET /api/staff/exports/attendance

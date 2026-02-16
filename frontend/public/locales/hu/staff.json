@@ -32,6 +32,15 @@
       "completed": "Teljesítve",
       "cancelled": "Lemondva",
       "noShow": "Nem jelent meg"
+    },
+    "filter": {
+      "dateFrom": "Kezdő dátum",
+      "dateTo": "Záró dátum",
+      "clientSearch": "Vendég keresése...",
+      "exportExcel": "Excel letöltése",
+      "exporting": "Exportálás...",
+      "exportSuccess": "Lista sikeresen exportálva",
+      "exportFailed": "Exportálás sikertelen"
     }
   },
   "stats": {

@@ -76,7 +76,16 @@
     "deleteConfirmTitle": "Felhasználó törlése",
     "deleteConfirmMessage": "Biztosan törölni szeretnéd a(z) {{name}} felhasználót? Ez a művelet nem vonható vissza.",
     "deleteSuccess": "Felhasználó sikeresen törölve",
-    "deleteFailed": "Nem sikerült törölni a felhasználót"
+    "deleteFailed": "Nem sikerült törölni a felhasználót",
+    "roleLabel": "Szerepkör",
+    "changeRole": "Szerepkör módosítása",
+    "roleChangeWarning": "A szerepkör módosítása hatással lesz a felhasználó jogosultságaira és hozzáférésére.",
+    "changePassword": "Jelszó módosítása",
+    "newPassword": "Új jelszó",
+    "confirmPassword": "Jelszó megerősítése",
+    "passwordOptional": "Hagyd üresen, ha nem akarod módosítani",
+    "passwordMismatch": "A jelszavak nem egyeznek",
+    "passwordMinLength": "A jelszónak legalább 8 karakter hosszúnak kell lennie"
   },
   "rooms": {
     "title": "Teremkezelés",

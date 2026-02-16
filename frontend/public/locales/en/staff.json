@@ -32,6 +32,15 @@
       "completed": "Completed",
       "cancelled": "Cancelled",
       "noShow": "No Show"
+    },
+    "filter": {
+      "dateFrom": "Date from",
+      "dateTo": "Date to",
+      "clientSearch": "Search client...",
+      "exportExcel": "Export to Excel",
+      "exporting": "Exporting...",
+      "exportSuccess": "List exported successfully",
+      "exportFailed": "Export failed"
     }
   },
   "stats": {
