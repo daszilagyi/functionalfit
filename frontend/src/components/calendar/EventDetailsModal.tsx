@@ -230,8 +230,8 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, o
                             <div>{clientPhone}</div>
                           </div>
                         )}
-                        {/* Show pricing for main client */}
-                        {hasMainPricing && (
+                        {/* Show pricing for main client - only for event owner or admin */}
+                        {hasMainPricing && (canEdit || isAdmin) && (
                           <div className="mt-2 pt-2 border-t text-sm">
                             <div className="text-muted-foreground mb-1">
                               <span className="font-medium">{t('form.pricing')}</span>
@@ -302,8 +302,8 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, o
                               <div>{clientPhone}</div>
                             </div>
                           )}
-                          {/* Show pricing for this additional client */}
-                          {hasPricing && (
+                          {/* Show pricing for this additional client - only for event owner or admin */}
+                          {hasPricing && (canEdit || isAdmin) && (
                             <div className="mt-2 pt-2 border-t text-sm">
                               <div className="text-muted-foreground mb-1">
                                 <span className="font-medium">{t('form.pricing')}</span>
@@ -427,8 +427,8 @@ export function EventDetailsModal({ event, open, onOpenChange, onEventUpdated, o
               </>
             )}
 
-            {/* Pricing Summary - Total for all guests */}
-            {event.type === 'INDIVIDUAL' && (() => {
+            {/* Pricing Summary - Total for all guests (only for event owner or admin) */}
+            {event.type === 'INDIVIDUAL' && (canEdit || isAdmin) && (() => {
               // Calculate totals from all clients' pricing
               let totalEntryFee = 0
               let totalTrainerFee = 0

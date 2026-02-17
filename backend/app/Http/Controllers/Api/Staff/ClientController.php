@@ -69,6 +69,7 @@ class ClientController extends Controller
                 'email' => $client->user->email ?? null,
                 'phone' => $client->user->phone ?? null,
                 'status' => $client->user->status ?? 'active',
+                'daily_training_notification' => $client->daily_training_notification ?? false,
                 'created_at' => $client->created_at,
             ];
         });
@@ -149,7 +150,7 @@ class ClientController extends Controller
             'emergency_contact_name' => $client->emergency_contact_name,
             'emergency_contact_phone' => $client->emergency_contact_phone,
             'notes' => $client->notes,
-            'daily_training_notification' => $client->daily_training_notification ?? true,
+            'daily_training_notification' => $client->daily_training_notification ?? false,
             'created_at' => $client->created_at,
         ]);
     }
@@ -218,7 +219,7 @@ class ClientController extends Controller
                     'emergency_contact_name' => $client->emergency_contact_name,
                     'emergency_contact_phone' => $client->emergency_contact_phone,
                     'notes' => $client->notes,
-                    'daily_training_notification' => $client->daily_training_notification ?? true,
+                    'daily_training_notification' => $client->daily_training_notification ?? false,
                     'created_at' => $client->created_at,
                 ], 'Vendég sikeresen frissítve');
             });

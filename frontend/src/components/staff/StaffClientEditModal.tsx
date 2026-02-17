@@ -49,7 +49,7 @@ const clientEditSchema = z.object({
   emergency_contact_name: z.string().optional().nullable(),
   emergency_contact_phone: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
-  daily_training_notification: z.boolean().default(true),
+  daily_training_notification: z.boolean().default(false),
 })
 
 type ClientEditFormData = z.infer<typeof clientEditSchema>
@@ -107,7 +107,7 @@ export function StaffClientEditModal({
       emergency_contact_name: '',
       emergency_contact_phone: '',
       notes: '',
-      daily_training_notification: true,
+      daily_training_notification: false,
     },
   })
 
@@ -138,7 +138,7 @@ export function StaffClientEditModal({
         emergency_contact_name: client.emergency_contact_name || '',
         emergency_contact_phone: client.emergency_contact_phone || '',
         notes: client.notes || '',
-        daily_training_notification: client.daily_training_notification ?? true,
+        daily_training_notification: client.daily_training_notification ?? false,
       })
     }
   }, [client, open, form])

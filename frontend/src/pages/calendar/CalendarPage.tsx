@@ -575,9 +575,23 @@ export default function CalendarPage() {
 
     const attendanceIcon = getAttendanceIcon()
 
+    // Get trainer name/initials
+    const staffName = eventData?.staff?.user?.name || ''
+    const staffInitials = staffName
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((part: string) => part.charAt(0).toUpperCase())
+      .join('')
+    const isWeekView = currentView === 'timeGridWeek'
+
     return (
       <div className="fc-event-main-frame" style={{ position: 'relative', width: '100%', height: '100%' }}>
         <div className="fc-event-time">{eventInfo.timeText}</div>
+        {staffName && (
+          <div className="fc-event-trainer" style={{ fontSize: isWeekView ? '0.6rem' : '0.65rem', opacity: 0.85, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {isWeekView ? staffInitials : staffName}
+          </div>
+        )}
         <div className="fc-event-title-container">
           <div className="fc-event-title fc-sticky">{eventInfo.event.title}</div>
         </div>

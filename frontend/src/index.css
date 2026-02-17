@@ -221,6 +221,10 @@
     font-size: 0.6rem !important;
   }
 
+  .fc-event-trainer {
+    font-size: 0.55rem !important;
+  }
+
   .fc-event-title {
     font-size: 0.65rem !important;
     white-space: nowrap;

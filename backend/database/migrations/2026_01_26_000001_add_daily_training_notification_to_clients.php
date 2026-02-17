@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::table('clients', function (Blueprint $table) {
             $table->boolean('daily_training_notification')
-                ->default(true)
+                ->default(false)
                 ->after('gcal_calendar_id')
                 ->comment('Whether client wants to receive daily training schedule notifications');
         });
