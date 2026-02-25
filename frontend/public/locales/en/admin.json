@@ -651,6 +651,22 @@
     "deleteSuccess": "Price code deleted successfully",
     "deleteError": "Failed to delete price code"
   },
+  "motivationalQuotes": {
+    "title": "Motivational Quotes",
+    "subtitle": "Manage random quotes included in daily trainer schedule emails",
+    "addQuote": "Add Quote",
+    "editQuote": "Edit Quote",
+    "deleteQuote": "Delete Quote",
+    "quoteText": "Quote Text",
+    "noQuotesFound": "No quotes found",
+    "createSuccess": "Quote added successfully",
+    "updateSuccess": "Quote updated successfully",
+    "deleteSuccess": "Quote deleted successfully",
+    "deleteConfirmation": "Are you sure you want to delete this quote? This action cannot be undone.",
+    "createError": "Failed to add quote",
+    "updateError": "Failed to update quote",
+    "deleteError": "Failed to delete quote"
+  },
   "settings": {
     "title": "Settings",
     "subtitle": "System settings management",

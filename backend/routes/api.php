@@ -271,6 +271,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/all-events', [StaffEventController::class, 'allEvents']);
             Route::post('/events', [StaffEventController::class, 'store']);
             Route::post('/events/preview-recurring', [StaffEventController::class, 'previewRecurring']);
+            Route::delete('/events/recurring-group/{groupId}', [StaffEventController::class, 'destroyGroup']);
             Route::patch('/events/{id}', [StaffEventController::class, 'update']);
             Route::delete('/events/{id}', [StaffEventController::class, 'destroy']);
 
@@ -391,6 +392,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/events', [AdminEventController::class, 'index']);
             Route::post('/events', [AdminEventController::class, 'store']);
             Route::post('/events/preview-recurring', [AdminEventController::class, 'previewRecurring']);
+            Route::delete('/events/recurring-group/{groupId}', [AdminEventController::class, 'destroyGroup']);
             Route::get('/events/{id}', [AdminEventController::class, 'show']);
             Route::put('/events/{id}', [AdminEventController::class, 'update']);
             Route::delete('/events/{id}', [AdminEventController::class, 'destroy']);
@@ -450,6 +452,10 @@ Route::prefix('v1')->group(function () {
             Route::patch('staff-price-codes/{staffPriceCode}', [StaffPriceCodeController::class, 'update']);
             Route::delete('staff-price-codes/{staffPriceCode}', [StaffPriceCodeController::class, 'destroy']);
             Route::patch('staff-price-codes/{staffPriceCode}/toggle-active', [StaffPriceCodeController::class, 'toggleActive']);
+
+            // Motivational Quotes management
+            Route::apiResource('motivational-quotes', App\Http\Controllers\Api\Admin\MotivationalQuoteController::class)
+                ->only(['index', 'store', 'update', 'destroy']);
 
             // Client CSV Import
             Route::post('clients/import', [App\Http\Controllers\Api\Admin\ClientImportController::class, 'import']);

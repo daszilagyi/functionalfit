@@ -64,6 +64,7 @@ export const adminKeys = {
   calendarChangeDetail: (id: number) => [...adminKeys.calendarChanges(), id] as const,
   settings: () => [...adminKeys.all, 'settings'] as const,
   notificationSettings: () => [...adminKeys.settings(), 'notifications'] as const,
+  motivationalQuotes: () => [...adminKeys.all, 'motivationalQuotes'] as const,
 }
 
 export interface UserListParams {
@@ -359,5 +360,27 @@ export const calendarChangesApi = {
   getDetail: async (id: number) => {
     const { data } = await apiClient.get<CalendarChangeLogDetail>(`/admin/calendar-changes/${id}`)
     return data
+  },
+}
+
+// Motivational Quotes API
+export const motivationalQuotesApi = {
+  list: async (): Promise<{ data: { id: number; text: string }[] }> => {
+    const { data } = await apiClient.get<{ data: { id: number; text: string }[] }>('/admin/motivational-quotes')
+    return data
+  },
+
+  create: async (payload: { text: string }): Promise<{ data: { id: number; text: string } }> => {
+    const { data } = await apiClient.post<{ data: { id: number; text: string } }>('/admin/motivational-quotes', payload)
+    return data
+  },
+
+  update: async (id: number, payload: { text: string }): Promise<{ data: { id: number; text: string } }> => {
+    const { data } = await apiClient.put<{ data: { id: number; text: string } }>(`/admin/motivational-quotes/${id}`, payload)
+    return data
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(`/admin/motivational-quotes/${id}`)
   },
 }

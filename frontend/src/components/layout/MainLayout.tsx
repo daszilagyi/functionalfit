@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Calendar, LayoutDashboard, Users, UserPlus, LogOut, Menu, Activity, ClipboardList, Shield, ChevronDown, ChevronRight, DoorOpen, FileText, Dumbbell, Mail, Code, History, RefreshCw, Settings, MapPin, DollarSign, Receipt, Tag, Upload } from 'lucide-react'
+import { Calendar, LayoutDashboard, Users, UserPlus, LogOut, Menu, Activity, ClipboardList, Shield, ChevronDown, ChevronRight, DoorOpen, FileText, Dumbbell, Mail, Code, History, RefreshCw, Settings, MapPin, DollarSign, Receipt, Tag, Upload, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
 import { useState } from 'react'
@@ -41,6 +41,7 @@ export default function MainLayout() {
     { name: t('admin:settlements.title'), href: '/admin/settlements', icon: Receipt },
     { name: t('admin:reports.title'), href: '/admin/reports', icon: FileText },
     { name: t('admin:eventChanges.title'), href: '/admin/event-changes', icon: History },
+    { name: t('admin:motivationalQuotes.title'), href: '/admin/motivational-quotes', icon: Sparkles },
     { name: t('admin:settings.title'), href: '/admin/settings', icon: Settings },
   ] : []
 

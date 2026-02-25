@@ -739,6 +739,22 @@
     "deleteSuccess": "Árkód sikeresen törölve",
     "deleteError": "Árkód törlése sikertelen"
   },
+  "motivationalQuotes": {
+    "title": "Motiváló idézetek",
+    "subtitle": "Napi edzői értesítőbe bekerülő véletlenszerű idézetek kezelése",
+    "addQuote": "Idézet hozzáadása",
+    "editQuote": "Idézet szerkesztése",
+    "deleteQuote": "Idézet törlése",
+    "quoteText": "Idézet szövege",
+    "noQuotesFound": "Még nincsenek idézetek",
+    "createSuccess": "Idézet sikeresen hozzáadva",
+    "updateSuccess": "Idézet sikeresen frissítve",
+    "deleteSuccess": "Idézet sikeresen törölve",
+    "deleteConfirmation": "Biztosan törölni szeretné ezt az idézetet? Ez a művelet nem vonható vissza.",
+    "createError": "Hiba az idézet hozzáadásakor",
+    "updateError": "Hiba az idézet frissítésekor",
+    "deleteError": "Hiba az idézet törlésekor"
+  },
   "settings": {
     "title": "Beállítások",
     "subtitle": "Rendszerbeállítások kezelése",

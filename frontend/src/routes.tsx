@@ -26,6 +26,7 @@ import SettlementsPage from './pages/admin/SettlementsPage'
 import EventChangesPage from './pages/admin/EventChangesPage'
 import ClientImportPage from './pages/admin/ClientImportPage'
 import AdminSettingsPage from './pages/admin/AdminSettingsPage'
+import MotivationalQuotesPage from './pages/admin/MotivationalQuotesPage'
 import NotFoundPage from './pages/NotFoundPage'
 import PublicClassesPage from './pages/public/PublicClassesPage'
 
@@ -153,6 +154,10 @@ export const routes: RouteObject[] = [
           {
             path: 'settings',
             element: <AdminSettingsPage />,
+          },
+          {
+            path: 'motivational-quotes',
+            element: <MotivationalQuotesPage />,
           },
         ],
       },
