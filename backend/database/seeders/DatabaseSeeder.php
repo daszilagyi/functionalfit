@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             SettingsSeeder::class,
             ClassTemplateSeeder::class,
             EmailTemplateSeeder::class,
+            MotivationalQuoteSeeder::class,
         ]);
     }
 }

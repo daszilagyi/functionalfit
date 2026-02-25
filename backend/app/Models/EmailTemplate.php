@@ -253,6 +253,7 @@ class EmailTemplate extends Model
             '{{status}}' => 'Booking status (booked/waitlist)',
             '{{old.starts_at}}' => 'Previous start time',
             '{{new.starts_at}}' => 'New start time',
+            '{{motivational_quote}}' => 'Véletlenszerű motiváló idézet',
         ];
     }
 }
